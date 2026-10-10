@@ -49,6 +49,7 @@
   const $ = (id) => document.getElementById(id);
   const stage = $('stage');
   const remoteVideo = $('remote');
+  const remoteBg = $('remote-bg');
   const localVideo = $('local');
   document.documentElement.lang = lang;
   $('peer-name').textContent = peerName;
@@ -66,6 +67,23 @@
     if (state !== 'waiting') stage.classList.add(state);
     $('status').textContent = message ?? '';
   }
+
+  // --- Cadrage de la vidéo de l'autre ---
+  // « cover » remplit l'écran si les orientations correspondent (téléphone ↔ téléphone) ;
+  // sinon (portrait sur écran d'ordinateur…) on montre l'image entière pour éviter l'effet zoom.
+  function updateFit() {
+    const vw = remoteVideo.videoWidth;
+    const vh = remoteVideo.videoHeight;
+    if (!vw || !vh) return;
+    const videoPortrait = vh > vw;
+    const screenPortrait = window.innerHeight > window.innerWidth;
+    const fit = videoPortrait !== screenPortrait;
+    remoteVideo.classList.toggle('fit', fit);
+    remoteBg.classList.toggle('on', fit);
+  }
+  remoteVideo.addEventListener('loadedmetadata', updateFit);
+  remoteVideo.addEventListener('resize', updateFit); // l'autre tourne son téléphone
+  window.addEventListener('resize', updateFit);
 
   // --- Média local ---
   let localStream = null;
@@ -94,6 +112,7 @@
     pc = null;
     pendingCandidates = [];
     remoteVideo.srcObject = null;
+    remoteBg.srcObject = null;
   }
 
   function createPeer() {
@@ -101,7 +120,10 @@
     pc = new RTCPeerConnection({ iceServers });
     localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
     pc.ontrack = ({ streams }) => {
-      if (remoteVideo.srcObject !== streams[0]) remoteVideo.srcObject = streams[0];
+      if (remoteVideo.srcObject !== streams[0]) {
+        remoteVideo.srcObject = streams[0];
+        remoteBg.srcObject = streams[0];
+      }
     };
     pc.onicecandidate = ({ candidate }) => {
       if (candidate) signal({ candidate });

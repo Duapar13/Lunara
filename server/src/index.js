@@ -40,7 +40,8 @@ app.use(
     );
     next();
   },
-  express.static(fileURLToPath(new URL('../public/call/', import.meta.url)), { maxAge: '1h' }),
+  // Pas de cache : chaque appel charge la dernière version de la page.
+  express.static(fileURLToPath(new URL('../public/call/', import.meta.url)), { maxAge: 0, etag: true }),
 );
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
