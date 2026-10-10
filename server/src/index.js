@@ -28,6 +28,7 @@ app.use(express.json({ limit: '100kb' }));
 app.use('/uploads', express.static(fileURLToPath(UPLOAD_DIR), { maxAge: '30d' }));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
+app.get('/config', (_req, res) => res.json({ testMode: config.testMode }));
 app.use('/auth', authRouter);
 app.use('/readers', readersRouter);
 app.use('/consultations', consultationsRouter);
@@ -46,5 +47,5 @@ initRealtime(server, { loadForUser, sendMessage });
 setInterval(() => sweep().catch((err) => console.error('sweep', err)), 5 * 60_000);
 
 server.listen(config.port, config.host, () => {
-  console.log(`Lunara API sur ${config.host}:${config.port}`);
+  console.log(`Lunara API sur ${config.host}:${config.port}${config.testMode ? ' (MODE TEST)' : ''}`);
 });

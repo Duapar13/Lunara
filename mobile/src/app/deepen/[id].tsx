@@ -10,6 +10,7 @@ import { TarotCard } from '@/components/TarotCard';
 import { Button, Card, ErrorText, Input, Loading } from '@/components/ui';
 import { colors, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { getLang, t } from '@/lib/i18n';
 
 /** Le client approfondit la tirada de sa voyante avec l'IA (Claude, côté serveur). */
 export default function Deepen() {
@@ -30,7 +31,7 @@ export default function Deepen() {
     try {
       const res = await api<{ id: number; text: string }>('/ai/deepen', {
         method: 'POST',
-        body: { consultationId: Number(id), question: question.trim() },
+        body: { consultationId: Number(id), question: question.trim(), lang: getLang() },
       });
       history.setData({
         readings: [
@@ -59,32 +60,32 @@ export default function Deepen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Card style={{ gap: space.md }}>
-          <Text style={styles.label}>TU TIRADA CON {c.reader.name.split(' ')[0].toUpperCase()}</Text>
+          <Text style={styles.label}>{t('TU TIRADA CON {name}', { name: c.reader.name.split(' ')[0].toUpperCase() })}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
             {(c.readingCards ?? []).map((card, i) => (
-              <TarotCard key={card.id} card={card} faceUp width={70} label={SPREAD_POSITIONS[i] ?? `Carta ${i + 1}`} />
+              <TarotCard key={card.id} card={card} faceUp width={70} label={SPREAD_POSITIONS[i] ?? t('Carta {v0}', { v0: i + 1 })} />
             ))}
           </ScrollView>
           {!!c.readerNotes && <Text style={type.bodyMuted}>{c.readerNotes}</Text>}
         </Card>
 
         <Input
-          label="¿Qué quieres entender mejor?"
+          label={t('¿Qué quieres entender mejor?')}
           value={question}
           onChangeText={setQuestion}
           multiline
           maxLength={500}
-          placeholder="Ej. ¿Qué me aconseja la carta del futuro sobre mi trabajo?"
+          placeholder={t('Ej. ¿Qué me aconseja la carta del futuro sobre mi trabajo?')}
         />
         <ErrorText message={error} />
         <Button
-          title="Profundizar con IA"
+          title={t('Profundizar con IA')}
           icon="sparkles-outline"
           onPress={ask}
           loading={loading}
           disabled={question.trim().length < 3}
         />
-        {loading && <Text style={[type.small, { textAlign: 'center' }]}>Las cartas están hablando…</Text>}
+        {loading && <Text style={[type.small, { textAlign: 'center' }]}>{t('Las cartas están hablando…')}</Text>}
 
         {readings.map((r) => (
           <Card key={r.id} style={{ gap: space.sm }}>
@@ -92,13 +93,12 @@ export default function Deepen() {
               <Text style={[type.h3, { flex: 1 }]}>{r.question}</Text>
               <Text style={type.small}>{formatRelative(r.createdAt)}</Text>
             </View>
-            <Text style={type.body}>{r.text}</Text>
+            <Text style={type.body}>{t(r.text)}</Text>
           </Card>
         ))}
 
         <Text style={type.small}>
-          Interpretación generada por IA para complementar la lectura de tu experto. Es una guía de reflexión y no
-          reemplaza el consejo profesional.
+          {t('Interpretación generada por IA para complementar la lectura de tu experto. Es una guía de reflexión y no reemplaza el consejo profesional.')}
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>

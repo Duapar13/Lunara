@@ -3,9 +3,10 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from './Avatar';
 import { Badge } from './ui';
-import { formatDateTime, offerTitle, STATUS_LABEL } from '@/lib/format';
+import { formatDateTime, offerTitle, statusLabel } from '@/lib/format';
 import type { Consultation } from '@/lib/types';
 import { colors, fonts, radius, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 const TONE = {
   pending_payment: 'muted',
@@ -34,9 +35,9 @@ export function ConsultationRow({ c, viewer }: { c: Consultation; viewer: 'clien
           <Ionicons name={c.type === 'chat' ? 'chatbubble-outline' : 'videocam-outline'} size={13} color={colors.accent} />
           <Text style={type.small}>{offerTitle(c)}</Text>
         </View>
-        <Text style={type.small}>{c.type === 'video' && !c.scheduledAt && c.status === 'paid' ? 'Lo antes posible' : formatDateTime(when)}</Text>
+        <Text style={type.small}>{c.type === 'video' && !c.scheduledAt && c.status === 'paid' ? t('Lo antes posible') : formatDateTime(when)}</Text>
       </View>
-      <Badge label={STATUS_LABEL[c.status]} tone={TONE[c.status]} />
+      <Badge label={statusLabel(c.status)} tone={TONE[c.status]} />
     </Pressable>
   );
 }

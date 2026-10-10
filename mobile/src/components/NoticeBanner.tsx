@@ -4,6 +4,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useSocket } from '@/lib/socket';
 import { colors, fonts, radius } from '@/theme';
+import { t } from '@/lib/i18n';
+
+// Les notifications serveur sont en espagnol : on traduit les phrases connues.
+function translateNotice(body: string) {
+  const booked = body.match(/^(.*) reservó una consulta$/);
+  if (booked) return t('{name} reservó una consulta', { name: booked[1] });
+  return t(body);
+}
 
 /** Bannière in-app pour les nouveaux messages et réservations reçus via Socket.io. */
 export function NoticeBanner() {
@@ -23,10 +31,10 @@ export function NoticeBanner() {
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.title} numberOfLines={1}>
-          {notice.title}
+          {t(notice.title)}
         </Text>
         <Text style={styles.body} numberOfLines={2}>
-          {notice.body}
+          {translateNotice(notice.body)}
         </Text>
       </View>
     </Pressable>

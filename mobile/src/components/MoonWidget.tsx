@@ -4,6 +4,7 @@ import Svg, { Circle, Defs, LinearGradient as SvgGradient, Path, RadialGradient,
 import { moonInfo } from '@/lib/moon';
 import { Float, GlassCard } from './Cosmic';
 import { colors, fonts, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 /** Dessine la partie éclairée de la lune selon la phase (croissant, gibbeuse, pleine…). */
 function MoonDisc({ phase, size }: { phase: number; size: number }) {
@@ -45,10 +46,10 @@ export function MoonWidget() {
         <MoonDisc phase={info.phase} size={74} />
       </Float>
       <View style={{ flex: 1, gap: 4 }}>
-        <Text style={styles.label}>ENERGÍA LUNAR DE HOY</Text>
-        <Text style={type.h2}>{info.name}</Text>
-        <Text style={styles.percent}>{Math.round(info.illumination * 100)} % iluminada</Text>
-        <Text style={type.small}>{info.energy}</Text>
+        <Text style={styles.label}>{t('ENERGÍA LUNAR DE HOY')}</Text>
+        <Text style={type.h2}>{t(info.name)}</Text>
+        <Text style={styles.percent}>{t('{n} % iluminada', { n: Math.round(info.illumination * 100) })}</Text>
+        <Text style={type.small}>{t(info.energy)}</Text>
       </View>
     </GlassCard>
   );

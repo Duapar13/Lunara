@@ -8,6 +8,8 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { CosmicScreen, Float, GlassCard, GradientText } from '@/components/Cosmic';
 import { Button } from '@/components/ui';
 import { colors, fonts, space, type } from '@/theme';
+import { t } from '@/lib/i18n';
+import { LanguageSwitch } from '@/components/LanguageSwitch';
 
 const FEATURES = [
   { icon: 'shield-checkmark', text: 'Expertos verificados' },
@@ -19,6 +21,9 @@ export default function Welcome() {
   return (
     <CosmicScreen intensity={1.4}>
       <SafeAreaView style={styles.safe}>
+        <View style={{ marginTop: space.sm }}>
+          <LanguageSwitch compact />
+        </View>
         <View style={styles.top}>
           <Animated.View entering={FadeInDown.duration(900)}>
             <Float distance={10} duration={3600}>
@@ -34,19 +39,19 @@ export default function Welcome() {
 
           <Animated.View entering={FadeInDown.delay(250).duration(800)} style={{ alignItems: 'center' }}>
             <GradientText style={styles.brand}>Lunara</GradientText>
-            <Text style={styles.tagline}>TAROT Y GUÍA ESPIRITUAL</Text>
+            <Text style={styles.tagline}>{t('TAROT Y GUÍA ESPIRITUAL')}</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(450).duration(800)} style={{ alignItems: 'center', gap: 10 }}>
-            <Text style={styles.title}>Respuestas reales</Text>
+            <Text style={styles.title}>{t('Respuestas reales')}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-              <Text style={styles.title}>para </Text>
+              <Text style={styles.title}>{t('para ')}</Text>
               <GradientText style={styles.titleAccent} colors={['#C4B5FF', '#8A7BFF', '#E2B97F']}>
-                tu camino.
+                {t('tu camino.')}
               </GradientText>
             </View>
             <Text style={[type.bodyMuted, { textAlign: 'center', maxWidth: 320 }]}>
-              Tarotistas y guías espirituales por chat o videollamada. Seguro, rápido y confidencial.
+              {t('Tarotistas y guías espirituales por chat o videollamada. Seguro, rápido y confidencial.')}
             </Text>
           </Animated.View>
         </View>
@@ -55,16 +60,16 @@ export default function Welcome() {
           {FEATURES.map((f) => (
             <GlassCard key={f.text} style={{ flex: 1 }} contentStyle={styles.feature}>
               <Ionicons name={f.icon} size={18} color={colors.gold} />
-              <Text style={styles.featureText}>{f.text}</Text>
+              <Text style={styles.featureText}>{t(f.text)}</Text>
             </GlassCard>
           ))}
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(800).duration(800)} style={styles.actions}>
-          <Button title="Comenzar mi camino" iconRight="arrow-forward" onPress={() => router.push('/register')} />
-          <Button title="Ya tengo cuenta" variant="secondary" onPress={() => router.push('/login')} />
+          <Button title={t('Comenzar mi camino')} iconRight="arrow-forward" onPress={() => router.push('/register')} />
+          <Button title={t('Ya tengo cuenta')} variant="secondary" onPress={() => router.push('/login')} />
           <Button
-            title="¿Eres tarotista? Únete como experto"
+            title={t('¿Eres tarotista? Únete como experto')}
             variant="ghost"
             small
             icon="moon-outline"
@@ -78,7 +83,7 @@ export default function Welcome() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: space.xl, justifyContent: 'space-between' },
-  top: { alignItems: 'center', gap: space.lg, marginTop: space.lg },
+  top: { alignItems: 'center', gap: space.lg },
   halo: { alignItems: 'center', justifyContent: 'center', width: 190, height: 190 },
   haloGlow: { position: 'absolute', width: 190, height: 190, borderRadius: 95 },
   mark: {

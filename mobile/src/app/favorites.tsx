@@ -5,6 +5,7 @@ import { ReaderCard } from '@/components/ReaderCard';
 import { Button, EmptyState, Loading } from '@/components/ui';
 import { space } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 export default function Favorites() {
   const { readers, loading, toggleFavorite } = useReaders('/me/favorites');
@@ -23,9 +24,9 @@ export default function Favorites() {
         ) : (
           <EmptyState
             icon="heart-outline"
-            title="Aún no tienes favoritos"
-            text="Toca el corazón en el perfil de un experto para guardarlo aquí."
-            action={<Button title="Explorar expertos" small onPress={() => router.push('/(client)/explore')} />}
+            title={t('Aún no tienes favoritos')}
+            text={t('Toca el corazón en el perfil de un experto para guardarlo aquí.')}
+            action={<Button title={t('Explorar expertos')} small onPress={() => router.push('/(client)/explore')} />}
           />
         )
       }

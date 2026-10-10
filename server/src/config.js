@@ -16,6 +16,8 @@ export const config = {
   jwtSecret: required('JWT_SECRET'),
   corsOrigins: (env.CORS_ORIGINS || '*').split(',').map((s) => s.trim()),
   commission: Number(env.PLATFORM_COMMISSION || 0.3),
+  // Mode test : visio « Ahora » sans voyante en ligne et accès immédiat à la salle. À désactiver en production.
+  testMode: env.TEST_MODE === '1',
   currency: 'PEN',
 
   db: {

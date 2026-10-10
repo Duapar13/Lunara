@@ -12,6 +12,7 @@ import { TarotCard } from '@/components/TarotCard';
 import { CosmicScreen, GlassCard, GradientText } from '@/components/Cosmic';
 import { Button, Chip, ChipRow, ErrorText, Input } from '@/components/ui';
 import { colors, fonts, space, type } from '@/theme';
+import { getLang, t } from '@/lib/i18n';
 
 type Step = 'intro' | 'pick' | 'reading';
 
@@ -39,7 +40,7 @@ export default function DailyTarot() {
     try {
       const res = await api<{ text: string }>('/ai/daily', {
         method: 'POST',
-        body: { cards: picked, question: question.trim() || undefined, topic },
+        body: { cards: picked, question: question.trim() || undefined, topic, lang: getLang() },
       });
       setText(res.text);
       setStep('reading');
@@ -65,14 +66,14 @@ export default function DailyTarot() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={{ gap: 6, alignItems: 'center' }}>
-            <Text style={styles.label}>✦ TIRADA DEL DÍA ✦</Text>
-            <GradientText style={styles.title}>Lectura de Tarot</GradientText>
+            <Text style={styles.label}>{t('✦ TIRADA DEL DÍA ✦')}</Text>
+            <GradientText style={styles.title}>{t('Lectura de Tarot')}</GradientText>
             <Text style={[type.bodyMuted, { textAlign: 'center' }]}>
               {step === 'intro'
-                ? 'Respira, concéntrate en lo que quieres comprender hoy.'
+                ? t('Respira, concéntrate en lo que quieres comprender hoy.')
                 : step === 'pick'
-                  ? `Deja que tu intuición elija · ${picked.length}/3`
-                  : 'Tu pasado, tu presente y tu futuro.'}
+                  ? t('Deja que tu intuición elija · {v0}/3', { v0: picked.length })
+                  : t('Tu pasado, tu presente y tu futuro.')}
             </Text>
           </View>
 
@@ -86,20 +87,20 @@ export default function DailyTarot() {
             <Animated.View entering={FadeInDown.duration(500)} style={{ gap: space.lg }}>
               <View style={{ marginHorizontal: -space.xl }}>
                 <ChipRow>
-                  {TOPICS.map((t) => (
-                    <Chip key={t.key} label={t.label} selected={topic === t.key} onPress={() => setTopic(t.key)} />
+                  {TOPICS.map((tp) => (
+                    <Chip key={tp.key} label={t(tp.label)} selected={topic === tp.key} onPress={() => setTopic(tp.key)} />
                   ))}
                 </ChipRow>
               </View>
               <Input
-                label="Tu pregunta (opcional)"
+                label={t('Tu pregunta (opcional)')}
                 value={question}
                 onChangeText={setQuestion}
-                placeholder="Ej. ¿Qué energía me acompaña esta semana?"
+                placeholder={t('Ej. ¿Qué energía me acompaña esta semana?')}
                 maxLength={500}
                 multiline
               />
-              <Button title="Barajar las cartas" icon="sparkles" variant="gold" onPress={() => setStep('pick')} />
+              <Button title={t('Barajar las cartas')} icon="sparkles" variant="gold" onPress={() => setStep('pick')} />
             </Animated.View>
           )}
 
@@ -113,8 +114,8 @@ export default function DailyTarot() {
                 ))}
               </View>
               <ErrorText message={error} />
-              <Button title="Revelar mi lectura" icon="eye" onPress={reveal} loading={loading} disabled={picked.length < 3} />
-              {loading && <Text style={[type.small, { textAlign: 'center' }]}>Las cartas están hablando…</Text>}
+              <Button title={t('Revelar mi lectura')} icon="eye" onPress={reveal} loading={loading} disabled={picked.length < 3} />
+              {loading && <Text style={[type.small, { textAlign: 'center' }]}>{t('Las cartas están hablando…')}</Text>}
             </Animated.View>
           )}
 
@@ -131,10 +132,10 @@ export default function DailyTarot() {
                   ))}
               </GlassCard>
               <Text style={[type.small, { textAlign: 'center' }]}>
-                Interpretación generada por IA como guía de reflexión.
+                {t('Interpretación generada por IA como guía de reflexión.')}
               </Text>
-              <Button title="Profundizar con un experto" variant="gold" iconRight="arrow-forward" onPress={() => router.push('/(client)/explore')} />
-              <Button title="Nueva tirada" variant="secondary" icon="refresh" onPress={restart} />
+              <Button title={t('Profundizar con un experto')} variant="gold" iconRight="arrow-forward" onPress={() => router.push('/(client)/explore')} />
+              <Button title={t('Nueva tirada')} variant="secondary" icon="refresh" onPress={restart} />
             </View>
           )}
         </ScrollView>

@@ -7,6 +7,7 @@ import type { Availability, ReaderDashboard } from '@/lib/types';
 import { Button, Card, ErrorText, Loading } from '@/components/ui';
 import { colors, fonts, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 // Lundi en premier, comme au Pérou ; les clés suivent getDay() (0 = dimanche).
 const DAYS = [
@@ -78,14 +79,14 @@ export default function ReaderAvailability() {
     <CosmicScreen>
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={type.bodyMuted}>
-        Horarios en los que los clientes pueden reservar una videollamada (hora de Lima). El chat está disponible siempre.
+        {t('Horarios en los que los clientes pueden reservar una videollamada (hora de Lima). El chat está disponible siempre.')}
       </Text>
       {DAYS.map((d) => {
         const range = availability[d.key];
         return (
           <Card key={d.key} style={styles.day}>
             <View style={styles.dayHead}>
-              <Text style={type.h3}>{d.label}</Text>
+              <Text style={type.h3}>{t(d.label)}</Text>
               <Switch
                 value={!!range}
                 onValueChange={(on) => setDay(d.key, on ? { start: '10:00', end: '18:00' } : undefined)}
@@ -96,7 +97,7 @@ export default function ReaderAvailability() {
             {range && (
               <View style={styles.range}>
                 <Stepper value={range.start} min={0} max={toMin(range.end) - 30} onChange={(start) => setDay(d.key, { ...range, start })} />
-                <Text style={type.small}>a</Text>
+                <Text style={type.small}>{t('a')}</Text>
                 <Stepper value={range.end} min={toMin(range.start) + 30} max={23 * 60 + 30} onChange={(end) => setDay(d.key, { ...range, end })} />
               </View>
             )}
@@ -104,7 +105,7 @@ export default function ReaderAvailability() {
         );
       })}
       <ErrorText message={error} />
-      <Button title="Guardar horarios" onPress={save} loading={saving} />
+      <Button title={t('Guardar horarios')} onPress={save} loading={saving} />
     </ScrollView>
     </CosmicScreen>
   );

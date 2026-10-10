@@ -2,6 +2,7 @@ import { StyleSheet, View, type ColorValue } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, gradients } from '@/theme';
+import { t } from '@/lib/i18n';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -18,7 +19,7 @@ function TabIcon({ icon, iconActive, focused, color }: { icon: IconName; iconAct
 }
 
 export const tab = (title: string, icon: IconName, iconActive: IconName) => ({
-  title,
+  title: t(title),
   tabBarIcon: ({ color, focused }: { color: ColorValue; focused: boolean }) => (
     <TabIcon icon={icon} iconActive={iconActive} focused={focused} color={color} />
   ),

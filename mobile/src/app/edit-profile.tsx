@@ -9,6 +9,7 @@ import { ProfileHeader } from '@/components/ProfileHeader';
 import { Button, Chip, ErrorText, Input, Loading } from '@/components/ui';
 import { space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 export default function EditProfile() {
   const { user, setUser } = useAuth();
@@ -74,45 +75,45 @@ export default function EditProfile() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <ProfileHeader />
-        <Input label="Nombre visible" value={name} onChangeText={setName} maxLength={80} />
+        <Input label={t('Nombre visible')} value={name} onChangeText={setName} maxLength={80} />
 
         {isReader && (
           <>
             <Input
-              label="Presentación corta"
+              label={t('Presentación corta')}
               value={headline}
               onChangeText={setHeadline}
               maxLength={120}
-              placeholder="Ej. Tarotista · Amor y relaciones"
+              placeholder={t('Ej. Tarotista · Amor y relaciones')}
             />
             <Input
-              label="Sobre mí"
+              label={t('Sobre mí')}
               value={bio}
               onChangeText={setBio}
               multiline
               maxLength={2000}
-              placeholder="Cuenta tu experiencia, tu forma de leer y cómo acompañas a tus consultantes."
+              placeholder={t('Cuenta tu experiencia, tu forma de leer y cómo acompañas a tus consultantes.')}
             />
             <Input
-              label="Años de experiencia"
+              label={t('Años de experiencia')}
               value={years}
               onChangeText={(v) => setYears(v.replace(/[^0-9]/g, ''))}
               keyboardType="number-pad"
               maxLength={2}
             />
             <View style={styles.block}>
-              <Text style={type.h3}>Especialidades</Text>
+              <Text style={type.h3}>{t('Especialidades')}</Text>
               <View style={styles.chips}>
                 {SPECIALTIES.map((s) => (
-                  <Chip key={s} label={s} selected={specialties.includes(s)} onPress={() => toggle(specialties, setSpecialties, s)} />
+                  <Chip key={s} label={t(s)} selected={specialties.includes(s)} onPress={() => toggle(specialties, setSpecialties, s)} />
                 ))}
               </View>
             </View>
             <View style={styles.block}>
-              <Text style={type.h3}>Idiomas</Text>
+              <Text style={type.h3}>{t('Idiomas')}</Text>
               <View style={styles.chips}>
                 {LANGUAGES.map((l) => (
-                  <Chip key={l} label={l} selected={languages.includes(l)} onPress={() => toggle(languages, setLanguages, l)} />
+                  <Chip key={l} label={t(l)} selected={languages.includes(l)} onPress={() => toggle(languages, setLanguages, l)} />
                 ))}
               </View>
             </View>
@@ -120,7 +121,7 @@ export default function EditProfile() {
         )}
 
         <ErrorText message={error} />
-        <Button title="Guardar" onPress={save} loading={saving} disabled={name.trim().length < 2} />
+        <Button title={t('Guardar')} onPress={save} loading={saving} disabled={name.trim().length < 2} />
       </ScrollView>
     </KeyboardAvoidingView>
     </CosmicScreen>

@@ -1,3 +1,5 @@
+import { t } from './i18n';
+
 export const API_URL = (process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000').replace(/\/$/, '');
 
 let authToken: string | null = null;
@@ -39,17 +41,17 @@ export async function api<T>(path: string, { method = 'GET', body, form }: Optio
       body: form ?? (body !== undefined ? JSON.stringify(body) : undefined),
     });
   } catch {
-    throw new ApiError(0, 'Sin conexión. Revisa tu internet e inténtalo de nuevo.');
+    throw new ApiError(0, t('Sin conexión. Revisa tu internet e inténtalo de nuevo.'));
   }
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (res.status === 401 && authToken) onUnauthorized?.();
-    throw new ApiError(res.status, data.error ?? 'Algo salió mal. Inténtalo de nuevo.');
+    throw new ApiError(res.status, t(data.error ?? 'Algo salió mal. Inténtalo de nuevo.'));
   }
   return data as T;
 }
 
 export function errorMessage(err: unknown) {
-  return err instanceof Error ? err.message : 'Algo salió mal. Inténtalo de nuevo.';
+  return err instanceof Error ? t(err.message) : t('Algo salió mal. Inténtalo de nuevo.');
 }

@@ -1,3 +1,4 @@
+import { locale, t } from './i18n';
 import type { Consultation, ConsultationStatus, Offer, OfferType } from './types';
 
 export function formatPrice(cents: number) {
@@ -5,18 +6,19 @@ export function formatPrice(cents: number) {
 }
 
 export function offerLabel(o: { type: OfferType; units: number }) {
-  if (o.type === 'chat') return `${o.units} ${o.units === 1 ? 'pregunta' : 'preguntas'}`;
-  return o.units === 60 ? '1 hora' : `${o.units} min`;
+  if (o.type === 'chat') return o.units === 1 ? t('1 pregunta') : t('{n} preguntas', { n: o.units });
+  return o.units === 60 ? t('1 hora') : t('{n} min', { n: o.units });
 }
 
 export function offerTitle(o: { type: OfferType; units: number }) {
-  return `${o.type === 'chat' ? 'Chat' : 'Videollamada'} · ${offerLabel(o)}`;
+  return `${o.type === 'chat' ? t('Chat') : t('Videollamada')} · ${offerLabel(o)}`;
 }
 
 export function sortOffers(offers: Offer[]) {
   return [...offers].sort((a, b) => (a.type === b.type ? a.units - b.units : a.type === 'chat' ? -1 : 1));
 }
 
+// Les libellés sont traduits à l'affichage avec t(label).
 export const TOPICS = [
   { key: 'amor', label: 'Amor' },
   { key: 'trabajo', label: 'Trabajo' },
@@ -28,23 +30,24 @@ export const TOPICS = [
 
 export type TopicKey = (typeof TOPICS)[number]['key'];
 
+// Valeurs stockées en base (en espagnol) ; affichées avec t(valeur).
 export const SPECIALTIES = ['Tarot', 'Amor', 'Trabajo', 'Dinero', 'Familia', 'Energía', 'Astrología', 'Oráculo', 'Numerología', 'Runas'];
 
 export const LANGUAGES = ['Español', 'Quechua', 'Inglés', 'Portugués'];
 
 export function topicLabel(key: string | null) {
-  return TOPICS.find((t) => t.key === key)?.label ?? 'General';
+  return t(TOPICS.find((x) => x.key === key)?.label ?? 'General');
 }
 
 export function formatDateTime(iso: string) {
   const d = new Date(iso);
-  const day = d.toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric', month: 'short' });
-  const time = d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+  const day = d.toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short' });
+  const time = d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
   return `${day} · ${time}`;
 }
 
 export function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatDay(isoDate: string) {
@@ -52,24 +55,24 @@ export function formatDay(isoDate: string) {
   const [y, m, d] = isoDate.split('-').map(Number);
   const date = new Date(y, m - 1, d);
   return {
-    weekday: date.toLocaleDateString('es-PE', { weekday: 'short' }).replace('.', ''),
+    weekday: date.toLocaleDateString(locale(), { weekday: 'short' }).replace('.', ''),
     day: String(d),
-    month: date.toLocaleDateString('es-PE', { month: 'short' }).replace('.', ''),
+    month: date.toLocaleDateString(locale(), { month: 'short' }).replace('.', ''),
   };
 }
 
 export function formatRelative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86400_000);
-  if (days < 1) return 'Hoy';
-  if (days < 2) return 'Ayer';
-  if (days < 30) return `Hace ${days} días`;
+  if (days < 1) return t('Hoy');
+  if (days < 2) return t('Ayer');
+  if (days < 30) return t('Hace {n} días', { n: days });
   const months = Math.floor(days / 30);
-  if (months < 12) return `Hace ${months} ${months === 1 ? 'mes' : 'meses'}`;
-  return new Date(iso).toLocaleDateString('es-PE', { month: 'short', year: 'numeric' });
+  if (months < 12) return months === 1 ? t('Hace 1 mes') : t('Hace {n} meses', { n: months });
+  return new Date(iso).toLocaleDateString(locale(), { month: 'short', year: 'numeric' });
 }
 
-export const STATUS_LABEL: Record<ConsultationStatus, string> = {
+const STATUS_LABEL: Record<ConsultationStatus, string> = {
   pending_payment: 'Pago pendiente',
   paid: 'Confirmada',
   active: 'En curso',
@@ -78,11 +81,13 @@ export const STATUS_LABEL: Record<ConsultationStatus, string> = {
   refunded: 'Reembolsada',
 };
 
+export const statusLabel = (s: ConsultationStatus) => t(STATUS_LABEL[s]);
+
 export function firstName(name: string) {
   return name.split(' ')[0];
 }
 
-/** La visio s'ouvre 10 min avant l'heure réservée (ou tout de suite si « Ahora »). */
-export function videoOpensAt(c: Consultation) {
-  return c.scheduledAt ? new Date(c.scheduledAt).getTime() - 10 * 60_000 : 0;
+/** La visio s'ouvre 10 min avant l'heure réservée (ou tout de suite si « Ahora » ou en mode test). */
+export function videoOpensAt(c: Consultation, testMode = false) {
+  return c.scheduledAt && !testMode ? new Date(c.scheduledAt).getTime() - 10 * 60_000 : 0;
 }

@@ -13,6 +13,7 @@ import { AuthProvider, useAuth } from '@/lib/auth';
 import { SocketProvider } from '@/lib/socket';
 import { NoticeBanner } from '@/components/NoticeBanner';
 import { colors, fonts } from '@/theme';
+import { LanguageProvider, t, useLang } from '@/lib/i18n';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,6 +31,7 @@ const theme = {
 
 function RootNavigator() {
   const { loading } = useAuth();
+  const { lang, ready: langReady } = useLang();
   const [fontsLoaded] = useFonts({
     PlayfairDisplay_500Medium,
     PlayfairDisplay_500Medium_Italic,
@@ -38,7 +40,7 @@ function RootNavigator() {
     Inter_500Medium,
     Inter_600SemiBold,
   });
-  const ready = fontsLoaded && !loading;
+  const ready = fontsLoaded && !loading && langReady;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
@@ -48,7 +50,9 @@ function RootNavigator() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      {/* key={lang} : changer de langue recrée les écrans pour qu'ils s'affichent dans la nouvelle langue. */}
       <Stack
+        key={lang}
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
           headerTintColor: colors.cream,
@@ -65,17 +69,17 @@ function RootNavigator() {
         <Stack.Screen name="(client)" options={{ headerShown: false }} />
         <Stack.Screen name="(reader)" options={{ headerShown: false }} />
         <Stack.Screen name="expert/[id]" options={{ title: '' , headerTransparent: true }} />
-        <Stack.Screen name="book/[id]" options={{ title: 'Reservar consulta' }} />
-        <Stack.Screen name="consultation/[id]" options={{ title: 'Consulta' }} />
+        <Stack.Screen name="book/[id]" options={{ title: t('Reservar consulta') }} />
+        <Stack.Screen name="consultation/[id]" options={{ title: t('Consulta') }} />
         <Stack.Screen name="video/[id]" options={{ headerShown: false, gestureEnabled: false }} />
-        <Stack.Screen name="review/[id]" options={{ title: 'Tu reseña', presentation: 'modal' }} />
-        <Stack.Screen name="reading/[id]" options={{ title: 'Registrar tirada' }} />
-        <Stack.Screen name="deepen/[id]" options={{ title: 'Profundizar con IA' }} />
-        <Stack.Screen name="favorites" options={{ title: 'Mis favoritos' }} />
-        <Stack.Screen name="edit-profile" options={{ title: 'Editar perfil' }} />
-        <Stack.Screen name="reader-offers" options={{ title: 'Paquetes y precios' }} />
-        <Stack.Screen name="reader-availability" options={{ title: 'Horarios' }} />
-        <Stack.Screen name="admin" options={{ title: 'Validación de expertos' }} />
+        <Stack.Screen name="review/[id]" options={{ title: t('Tu reseña'), presentation: 'modal' }} />
+        <Stack.Screen name="reading/[id]" options={{ title: t('Registrar tirada') }} />
+        <Stack.Screen name="deepen/[id]" options={{ title: t('Profundizar con IA') }} />
+        <Stack.Screen name="favorites" options={{ title: t('Mis favoritos') }} />
+        <Stack.Screen name="edit-profile" options={{ title: t('Editar perfil') }} />
+        <Stack.Screen name="reader-offers" options={{ title: t('Paquetes y precios') }} />
+        <Stack.Screen name="reader-availability" options={{ title: t('Horarios') }} />
+        <Stack.Screen name="admin" options={{ title: t('Validación de expertos') }} />
       </Stack>
       <NoticeBanner />
       <StatusBar style="light" />
@@ -86,11 +90,13 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <ThemeProvider value={theme}>
+      <LanguageProvider>
       <AuthProvider>
         <SocketProvider>
           <RootNavigator />
         </SocketProvider>
       </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

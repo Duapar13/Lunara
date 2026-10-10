@@ -18,7 +18,13 @@ Cómo interpretar:
 Formato: texto plano para móvil, sin markdown ni títulos con #. Párrafos cortos.
 Termina con una frase breve que invite a la persona a reflexionar o a profundizar con un experto de Lunara.`;
 
-async function ask(userText, maxWords) {
+// Langue de la réponse : l'espagnol du Pérou par défaut, le français pour le mode de test en français.
+const LANG_INSTRUCTION = {
+  es: '',
+  fr: '\n\nIMPORTANTE: responde en francés (de Francia), con el mismo tono cálido; tutea a la persona.',
+};
+
+async function ask(userText, maxWords, lang = 'es') {
   let response;
   try {
     client ??= new Anthropic();
@@ -29,7 +35,7 @@ async function ask(userText, maxWords) {
       fallbacks: 'default',
       output_config: { effort: 'medium' },
       system: SYSTEM,
-      messages: [{ role: 'user', content: `${userText}\n\nResponde en ${maxWords} palabras como máximo.` }],
+      messages: [{ role: 'user', content: `${userText}\n\nResponde en ${maxWords} palabras como máximo.${LANG_INSTRUCTION[lang] ?? ''}` }],
     });
   } catch (err) {
     if (err instanceof Anthropic.RateLimitError) {
@@ -53,7 +59,7 @@ async function ask(userText, maxWords) {
 }
 
 /** Tirage du jour à 3 cartes fait par l'utilisateur lui-même. */
-export function interpretDaily({ cards, question, topic }) {
+export function interpretDaily({ cards, question, topic, lang }) {
   return ask(
     `Tirada del día de 3 cartas.
 Tema: ${topic || 'general'}
@@ -62,11 +68,12 @@ Pregunta de la persona: ${question || '(sin pregunta concreta, lectura general d
 Cartas:
 ${describeCards(cards)}`,
     250,
+    lang,
   );
 }
 
 /** Approfondissement d'une lecture faite par un expert pendant une consultation. */
-export function interpretDeepen({ cards, readerNotes, intakeQuestion, question }) {
+export function interpretDeepen({ cards, readerNotes, intakeQuestion, question, lang }) {
   return ask(
     `Un experto de Lunara hizo esta lectura a la persona durante su consulta.
 Pregunta inicial de la consulta: ${intakeQuestion || '(no indicada)'}
@@ -81,5 +88,6 @@ Ahora la persona quiere profundizar con esta pregunta: ${question}
 
 Explica con más detalle lo que las cartas aportan a esa pregunta, respetando y complementando la lectura del experto, sin contradecirla.`,
     350,
+    lang,
   );
 }

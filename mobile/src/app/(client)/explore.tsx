@@ -9,6 +9,7 @@ import { SPECIALTIES } from '@/lib/format';
 import { ReaderCard } from '@/components/ReaderCard';
 import { Chip, ChipRow, EmptyState, ErrorText, Loading } from '@/components/ui';
 import { colors, fonts, radius, space, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 const SORTS = [
   { key: '', label: 'Recomendados' },
@@ -58,13 +59,13 @@ export default function Explore() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={[type.h1, styles.pad]}>Encontrar expertos</Text>
+            <Text style={[type.h1, styles.pad]}>{t('Encontrar expertos')}</Text>
             <View style={[styles.search, styles.margin]}>
               <Ionicons name="search" size={18} color={colors.textFaint} />
               <TextInput
                 value={q}
                 onChangeText={setQ}
-                placeholder="Nombre o especialidad"
+                placeholder={t('Nombre o especialidad')}
                 placeholderTextColor={colors.textFaint}
                 selectionColor={colors.accent}
                 style={styles.searchInput}
@@ -77,14 +78,14 @@ export default function Explore() {
               )}
             </View>
             <ChipRow>
-              <Chip label="Todos" selected={!specialty} onPress={() => setSpecialty('')} />
+              <Chip label={t('Todos')} selected={!specialty} onPress={() => setSpecialty('')} />
               {SPECIALTIES.map((s) => (
-                <Chip key={s} label={s} selected={specialty === s} onPress={() => setSpecialty(specialty === s ? '' : s)} />
+                <Chip key={s} label={t(s)} selected={specialty === s} onPress={() => setSpecialty(specialty === s ? '' : s)} />
               ))}
             </ChipRow>
             <View style={[styles.filters, styles.margin]}>
               <Chip
-                label="En línea ahora"
+                label={t('En línea ahora')}
                 icon="ellipse"
                 selected={onlineOnly}
                 onPress={() => setOnlineOnly(!onlineOnly)}
@@ -92,7 +93,7 @@ export default function Explore() {
               <View style={styles.sorts}>
                 {SORTS.map((s) => (
                   <Pressable key={s.key} onPress={() => setSort(s.key)} hitSlop={6}>
-                    <Text style={[styles.sort, sort === s.key && styles.sortActive]}>{s.label}</Text>
+                    <Text style={[styles.sort, sort === s.key && styles.sortActive]}>{t(s.label)}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -106,8 +107,8 @@ export default function Explore() {
           ) : (
             <EmptyState
               icon="search-outline"
-              title={onlineOnly ? 'Nadie en línea en este momento' : 'Sin resultados'}
-              text={onlineOnly ? 'Puedes reservar una videollamada con horario o escribir por chat.' : 'Prueba con otra búsqueda.'}
+              title={onlineOnly ? t('Nadie en línea en este momento') : t('Sin resultados')}
+              text={onlineOnly ? t('Puedes reservar una videollamada con horario o escribir por chat.') : t('Prueba con otra búsqueda.')}
             />
           )
         }

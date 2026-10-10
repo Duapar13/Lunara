@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, errorMessage } from '@/lib/api';
 import { Button, EmptyState, Loading } from '@/components/ui';
 import { colors, fonts, radius, space } from '@/theme';
+import { t } from '@/lib/i18n';
 
 /**
  * Visio Daily.co dans une WebView : fonctionne dans Expo Go, sans module WebRTC natif.
@@ -25,7 +26,7 @@ export default function VideoCall() {
       const cam = await Camera.requestCameraPermissionsAsync();
       const mic = await Camera.requestMicrophonePermissionsAsync();
       if (!cam.granted || !mic.granted) {
-        setError('Necesitamos acceso a tu cámara y micrófono para la videollamada. Actívalos en los ajustes de tu teléfono.');
+        setError(t('Necesitamos acceso a tu cámara y micrófono para la videollamada. Actívalos en los ajustes de tu teléfono.'));
         return;
       }
       try {
@@ -48,9 +49,9 @@ export default function VideoCall() {
   const ss = remaining != null ? String(Math.floor((remaining % 60000) / 1000)).padStart(2, '0') : '--';
 
   function leave() {
-    Alert.alert('Salir de la videollamada', 'Podrás volver a entrar mientras dure tu horario.', [
-      { text: 'Quedarme', style: 'cancel' },
-      { text: 'Salir', style: 'destructive', onPress: () => router.back() },
+    Alert.alert(t('Salir de la videollamada'), t('Podrás volver a entrar mientras dure tu horario.'), [
+      { text: t('Quedarme'), style: 'cancel' },
+      { text: t('Salir'), style: 'destructive', onPress: () => router.back() },
     ]);
   }
 
@@ -71,8 +72,8 @@ export default function VideoCall() {
 
       {error ? (
         <View style={{ flex: 1, justifyContent: 'center', padding: space.xl }}>
-          <EmptyState icon="videocam-off-outline" title="No se pudo iniciar la videollamada" text={error} />
-          <Button title="Volver" variant="secondary" onPress={() => router.back()} />
+          <EmptyState icon="videocam-off-outline" title={t('No se pudo iniciar la videollamada')} text={error} />
+          <Button title={t('Volver')} variant="secondary" onPress={() => router.back()} />
         </View>
       ) : !url ? (
         <Loading />

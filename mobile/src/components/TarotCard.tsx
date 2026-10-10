@@ -7,6 +7,7 @@ import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring, wi
 import { ARCANA_ICONS, MAJOR_ARCANA } from '@/lib/tarot';
 import type { DrawnCard } from '@/lib/types';
 import { colors, fonts, gradients } from '@/theme';
+import { t } from '@/lib/i18n';
 
 type Props = {
   card?: DrawnCard;
@@ -63,7 +64,7 @@ function CardFace({ card, w, h }: { card: DrawnCard; w: number; h: number }) {
           <Ionicons name={icon} size={w * 0.3} color={colors.gold} />
         </View>
         <Text style={[styles.name, { fontSize: Math.max(9, w * 0.115) }]} numberOfLines={2}>
-          {arcana.name}
+          {t(arcana.name)}
         </Text>
       </View>
     </LinearGradient>
@@ -116,8 +117,8 @@ export function TarotCard({ card, faceUp, width = 90, onPress, selected, label, 
           </View>
         </LinearGradient>
       </Animated.View>
-      {label && <Text style={styles.label}>{label}</Text>}
-      {faceUp && card?.reversed && <Text style={styles.reversed}>Invertida</Text>}
+      {label && <Text style={styles.label}>{t(label)}</Text>}
+      {faceUp && card?.reversed && <Text style={styles.reversed}>{t('Invertida')}</Text>}
     </View>
   );
   if (!onPress) return content;

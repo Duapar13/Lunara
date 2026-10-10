@@ -6,12 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, errorMessage } from '@/lib/api';
 import { useFetch } from '@/lib/hooks';
 import { CARD_PAYMENTS_AVAILABLE, pay } from '@/lib/payments';
-import { formatDay, formatPrice, formatTime, offerTitle, TOPICS, type TopicKey } from '@/lib/format';
+import { formatDay, formatPrice, formatTime, offerLabel, offerTitle, TOPICS, type TopicKey } from '@/lib/format';
 import type { Consultation, Offer, Reader } from '@/lib/types';
 import { Avatar } from '@/components/Avatar';
 import { Button, Card, Chip, ChipRow, ErrorText, Input, Loading } from '@/components/ui';
 import { colors, fonts, radius, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
+import { useAppConfig } from '@/lib/appConfig';
 
 type SlotDay = { date: string; slots: string[] };
 
@@ -20,6 +22,8 @@ export default function Book() {
   const { data } = useFetch<{ reader: Reader; offers: Offer[] }>(`/readers/${id}`);
   const offer = data?.offers.find((o) => o.id === Number(offerId));
   const reader = data?.reader;
+  // Mode test : « Ahora » est proposé même si la voyante n'est pas en ligne.
+  const { testMode } = useAppConfig();
 
   const [topic, setTopic] = useState<TopicKey>('general');
   const [question, setQuestion] = useState('');
@@ -43,8 +47,9 @@ export default function Book() {
   if (!data || !offer || !reader) return <Loading />;
 
   const isVideo = offer.type === 'video';
-  const now = isVideo && reader.online && !slot;
-  const ready = isVideo ? !!slot || reader.online : question.trim().length >= 5;
+  const canNow = reader.online || testMode;
+  const now = isVideo && canNow && !slot;
+  const ready = isVideo ? !!slot || canNow : question.trim().length >= 5;
 
   async function checkout() {
     setError(null);
@@ -72,9 +77,9 @@ export default function Book() {
         router.push(`/consultation/${c.id}`);
       } else if (result.status === 'pending') {
         Alert.alert(
-          'Pago en proceso',
-          'Estamos esperando la confirmación del pago. Te avisaremos en "Mis consultas" apenas se confirme.',
-          [{ text: 'Entendido', onPress: () => router.replace('/(client)/consultations') }],
+          t('Pago en proceso'),
+          t('Estamos esperando la confirmación del pago. Te avisaremos en "Mis consultas" apenas se confirme.'),
+          [{ text: t('Entendido'), onPress: () => router.replace('/(client)/consultations') }],
         );
       }
     } catch (err) {
@@ -100,11 +105,11 @@ export default function Book() {
         </Card>
 
         <View style={styles.block}>
-          <Text style={type.h3}>Tema de tu consulta</Text>
+          <Text style={type.h3}>{t('Tema de tu consulta')}</Text>
           <View style={{ marginHorizontal: -space.xl }}>
             <ChipRow>
-              {TOPICS.map((t) => (
-                <Chip key={t.key} label={t.label} selected={topic === t.key} onPress={() => setTopic(t.key)} />
+              {TOPICS.map((tp) => (
+                <Chip key={tp.key} label={t(tp.label)} selected={topic === tp.key} onPress={() => setTopic(tp.key)} />
               ))}
             </ChipRow>
           </View>
@@ -112,13 +117,17 @@ export default function Book() {
 
         {isVideo && (
           <View style={styles.block}>
-            <Text style={type.h3}>¿Cuándo?</Text>
-            {reader.online && (
+            <Text style={type.h3}>{t('¿Cuándo?')}</Text>
+            {canNow && (
               <Pressable onPress={() => setSlot(null)} style={[styles.now, now && styles.nowActive]}>
                 <View style={styles.liveDot} />
                 <View style={{ flex: 1 }}>
-                  <Text style={type.h3}>Ahora</Text>
-                  <Text style={type.small}>{reader.name.split(' ')[0]} está en línea</Text>
+                  <Text style={type.h3}>{t('Ahora')}</Text>
+                  <Text style={type.small}>
+                    {reader.online
+                      ? t('{name} está en línea', { name: reader.name.split(' ')[0] })
+                      : t('Modo prueba: videollamada inmediata')}
+                  </Text>
                 </View>
                 <Ionicons name={now ? 'radio-button-on' : 'radio-button-off'} size={20} color={now ? colors.primary : colors.textFaint} />
               </Pressable>
@@ -126,7 +135,7 @@ export default function Book() {
             {days === null ? (
               <Loading />
             ) : days.length === 0 ? (
-              <Text style={type.small}>No hay horarios disponibles en los próximos 7 días.</Text>
+              <Text style={type.small}>{t('No hay horarios disponibles en los próximos 7 días.')}</Text>
             ) : (
               <>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
@@ -147,7 +156,7 @@ export default function Book() {
                     <Chip key={s} label={formatTime(s)} selected={slot === s} onPress={() => setSlot(s)} />
                   ))}
                 </View>
-                <Text style={type.small}>Horario de tu teléfono. Podrás entrar 10 minutos antes.</Text>
+                <Text style={type.small}>{t('Horario de tu teléfono. Podrás entrar 10 minutos antes.')}</Text>
               </>
             )}
           </View>
@@ -155,39 +164,39 @@ export default function Book() {
 
         <View style={styles.block}>
           <Input
-            label={isVideo ? 'Cuéntale brevemente tu situación (opcional)' : 'Tu primera pregunta'}
+            label={isVideo ? t('Cuéntale brevemente tu situación (opcional)') : t('Tu primera pregunta')}
             value={question}
             onChangeText={setQuestion}
             multiline
             maxLength={1000}
-            placeholder={isVideo ? 'Así tu experto podrá prepararse.' : 'Ej. ¿Cómo evolucionará mi relación en los próximos meses?'}
+            placeholder={isVideo ? t('Así tu experto podrá prepararse.') : t('Ej. ¿Cómo evolucionará mi relación en los próximos meses?')}
             hint={
               isVideo
                 ? undefined
-                : `Tu paquete incluye ${offer.units} ${offer.units === 1 ? 'pregunta' : 'preguntas'}. Esta cuenta como la primera.`
+                : t('Tu paquete incluye {label}. Esta cuenta como la primera.', { label: offerLabel(offer) })
             }
           />
         </View>
 
         <View style={styles.block}>
-          <Text style={type.h3}>Método de pago</Text>
+          <Text style={type.h3}>{t('Método de pago')}</Text>
           <View style={[styles.method, styles.methodActive]}>
             <Ionicons name="card-outline" size={22} color={colors.accent} />
             <View style={{ flex: 1 }}>
-              <Text style={type.h3}>Tarjeta, Apple Pay o Google Pay</Text>
-              <Text style={type.small}>Visa, Mastercard y Amex, de Perú o del extranjero</Text>
+              <Text style={type.h3}>{t('Tarjeta, Apple Pay o Google Pay')}</Text>
+              <Text style={type.small}>{t('Visa, Mastercard y Amex, de Perú o del extranjero')}</Text>
             </View>
             <Ionicons name="lock-closed" size={18} color={colors.gold} />
           </View>
           {!CARD_PAYMENTS_AVAILABLE && (
-            <Text style={[type.small, { color: colors.gold }]}>El pago está disponible en la app móvil de Lunara.</Text>
+            <Text style={[type.small, { color: colors.gold }]}>{t('El pago está disponible en la app móvil de Lunara.')}</Text>
           )}
         </View>
 
         <View style={styles.policy}>
           <Ionicons name="shield-checkmark-outline" size={16} color={colors.textMuted} />
           <Text style={[type.small, { flex: 1 }]}>
-            Pago seguro. Si la consulta no empieza, puedes cancelarla y recibir el reembolso completo.
+            {t('Pago seguro. Si la consulta no empieza, puedes cancelarla y recibir el reembolso completo.')}
           </Text>
         </View>
         <ErrorText message={error} />
@@ -195,10 +204,10 @@ export default function Book() {
 
       <SafeAreaView edges={['bottom']} style={styles.footer}>
         <View>
-          <Text style={type.small}>Total</Text>
+          <Text style={type.small}>{t('Total')}</Text>
           <Text style={styles.total}>{formatPrice(offer.priceCents)}</Text>
         </View>
-        <Button title="Pagar y reservar" onPress={checkout} loading={paying} disabled={!ready || !CARD_PAYMENTS_AVAILABLE} style={{ flex: 1, maxWidth: 220 }} />
+        <Button title={t('Pagar y reservar')} onPress={checkout} loading={paying} disabled={!ready || !CARD_PAYMENTS_AVAILABLE} style={{ flex: 1, maxWidth: 220 }} />
       </SafeAreaView>
     </KeyboardAvoidingView>
     </CosmicScreen>

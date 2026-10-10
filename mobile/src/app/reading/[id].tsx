@@ -9,6 +9,7 @@ import { TarotCard } from '@/components/TarotCard';
 import { Button, ErrorText, Input, Loading } from '@/components/ui';
 import { colors, fonts, radius, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 /** La voyante enregistre les cartes tirées et un message ; le client pourra ensuite approfondir avec l'IA. */
 export default function RegisterReading() {
@@ -62,7 +63,7 @@ export default function RegisterReading() {
     <CosmicScreen>
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Text style={type.bodyMuted}>
-        Selecciona las cartas en el orden en que salieron. Toca una carta elegida para marcarla como invertida.
+        {t('Selecciona las cartas en el orden en que salieron. Toca una carta elegida para marcarla como invertida.')}
       </Text>
 
       {cards.length > 0 && (
@@ -73,7 +74,7 @@ export default function RegisterReading() {
               card={c}
               faceUp
               width={76}
-              label={SPREAD_POSITIONS[i] ?? `Carta ${i + 1}`}
+              label={SPREAD_POSITIONS[i] ?? t('Carta {v0}', { v0: i + 1 })}
               onPress={() => flip(c.id)}
             />
           ))}
@@ -101,20 +102,20 @@ export default function RegisterReading() {
       </View>
 
       <Input
-        label="Mensaje para tu consultante"
+        label={t('Mensaje para tu consultante')}
         value={notes}
         onChangeText={setNotes}
         multiline
         maxLength={4000}
-        placeholder="Resume lo que viste en la tirada y tus consejos."
-        hint="El cliente verá estas cartas y tu mensaje en su consulta."
+        placeholder={t('Resume lo que viste en la tirada y tus consejos.')}
+        hint={t('El cliente verá estas cartas y tu mensaje en su consulta.')}
       />
       <ErrorText message={error} />
-      <Button title="Guardar tirada" onPress={save} loading={saving} disabled={!cards.length} icon="checkmark" />
+      <Button title={t('Guardar tirada')} onPress={save} loading={saving} disabled={!cards.length} icon="checkmark" />
       <View style={styles.tip}>
         <Ionicons name="sparkles-outline" size={16} color={colors.accent} />
         <Text style={[type.small, { flex: 1 }]}>
-          Con tu tirada guardada, el cliente podrá profundizar con la IA de Lunara, que siempre respeta tu interpretación.
+          {t('Con tu tirada guardada, el cliente podrá profundizar con la IA de Lunara, que siempre respeta tu interpretación.')}
         </Text>
       </View>
     </ScrollView>

@@ -16,6 +16,7 @@ import { Avatar } from '@/components/Avatar';
 import { CosmicScreen, Float, GlassCard, GradientText, LivePulse } from '@/components/Cosmic';
 import { Badge, Button, EmptyState, ErrorText, Loading, Stars } from '@/components/ui';
 import { avatarGradients, colors, fonts, gradients, radius, space, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 type Data = { reader: Reader; offers: Offer[]; reviews: Review[] };
 
@@ -88,7 +89,7 @@ export default function ExpertProfile() {
             <View style={[styles.statusPill, reader.online && styles.statusOnline]}>
               {reader.online ? <LivePulse size={8} /> : <View style={styles.offDot} />}
               <Text style={[styles.statusText, reader.online && { color: colors.success }]}>
-                {reader.online ? 'En línea · disponible ahora' : 'Fuera de línea · reserva un horario'}
+                {reader.online ? t('En línea · disponible ahora') : t('Fuera de línea · reserva un horario')}
               </Text>
             </View>
           </SafeAreaView>
@@ -99,42 +100,42 @@ export default function ExpertProfile() {
             <GlassCard glow contentStyle={styles.stats}>
               <Stat
                 value={reader.ratingCount ? reader.ratingAvg.toFixed(1) : '—'}
-                label={reader.ratingCount ? `${reader.ratingCount} reseñas` : 'Sin reseñas'}
+                label={reader.ratingCount ? t('{v0} reseñas', { v0: reader.ratingCount }) : t('Sin reseñas')}
                 icon="star"
               />
               <View style={styles.divider} />
               <Stat value={String(reader.consultationsCount)} label="consultas" icon="chatbubbles" />
               <View style={styles.divider} />
-              <Stat value={`${reader.yearsExperience}`} label="años de exp." icon="ribbon" />
+              <Stat value={`${reader.yearsExperience}`} label={t('años de exp.')} icon="ribbon" />
             </GlassCard>
           </Animated.View>
 
           <View style={styles.badges}>
-            <Badge label="✓ Perfil verificado" tone="violet" />
+            <Badge label={t('✓ Perfil verificado')} tone="violet" />
             {reader.specialties.map((s) => (
-              <Badge key={s} label={s} tone="gold" />
+              <Badge key={s} label={t(s)} tone="gold" />
             ))}
             {reader.languages.map((l) => (
-              <Badge key={l} label={l} tone="muted" />
+              <Badge key={l} label={t(l)} tone="muted" />
             ))}
           </View>
 
           {!!reader.bio && (
             <View style={{ gap: space.sm }}>
-              <Text style={type.h2}>Sobre mí</Text>
+              <Text style={type.h2}>{t('Sobre mí')}</Text>
               <Text style={[type.bodyMuted, { lineHeight: 24 }]}>{reader.bio}</Text>
             </View>
           )}
 
           <View style={{ gap: space.md }}>
-            <Text style={type.h2}>Elige tu consulta</Text>
+            <Text style={type.h2}>{t('Elige tu consulta')}</Text>
             <View style={styles.tabs}>
               {(['chat', 'video'] as const).map((k) => {
                 const active = kind === k;
                 const inner = (
                   <>
                     <Ionicons name={k === 'chat' ? 'chatbubble-ellipses' : 'videocam'} size={18} color={active ? colors.white : colors.textMuted} />
-                    <Text style={[styles.tabText, active && { color: colors.white }]}>{k === 'chat' ? 'Chat' : 'Videollamada'}</Text>
+                    <Text style={[styles.tabText, active && { color: colors.white }]}>{k === 'chat' ? t('Chat') : t('Videollamada')}</Text>
                   </>
                 );
                 return (
@@ -152,10 +153,10 @@ export default function ExpertProfile() {
             </View>
             <Text style={type.small}>
               {kind === 'chat'
-                ? 'Escribe tus preguntas y recibe respuestas detalladas en un chat privado.'
-                : 'Lectura en vivo, cara a cara, con duración garantizada.'}
+                ? t('Escribe tus preguntas y recibe respuestas detalladas en un chat privado.')
+                : t('Lectura en vivo, cara a cara, con duración garantizada.')}
             </Text>
-            {ofKind.length === 0 && <Text style={type.small}>Este experto no ofrece este tipo de consulta.</Text>}
+            {ofKind.length === 0 && <Text style={type.small}>{t('Este experto no ofrece este tipo de consulta.')}</Text>}
             {ofKind.map((o) => {
               const active = selected?.id === o.id;
               return (
@@ -170,7 +171,7 @@ export default function ExpertProfile() {
                     <View style={[styles.radio, active && styles.radioOn]}>{active && <View style={styles.radioDot} />}</View>
                     <View style={{ flex: 1 }}>
                       <Text style={type.h3}>{offerLabel(o)}</Text>
-                      <Text style={type.small}>{o.type === 'chat' ? 'Respuestas por escrito' : 'Videollamada privada'}</Text>
+                      <Text style={type.small}>{o.type === 'chat' ? t('Respuestas por escrito') : t('Videollamada privada')}</Text>
                     </View>
                     {active ? (
                       <GradientText style={styles.offerPrice}>{formatPrice(o.priceCents)}</GradientText>
@@ -185,7 +186,7 @@ export default function ExpertProfile() {
 
           <View style={{ gap: space.md }}>
             <View style={styles.reviewsHead}>
-              <Text style={type.h2}>Reseñas verificadas</Text>
+              <Text style={type.h2}>{t('Reseñas verificadas')}</Text>
               {reader.ratingCount > 0 && (
                 <View style={styles.ratingBig}>
                   <Ionicons name="star" size={16} color={colors.gold} />
@@ -194,7 +195,7 @@ export default function ExpertProfile() {
               )}
             </View>
             {reviews.length === 0 ? (
-              <EmptyState icon="star-outline" title="Aún no hay reseñas" text="Solo quienes completaron una consulta pueden opinar." />
+              <EmptyState icon="star-outline" title={t('Aún no hay reseñas')} text={t('Solo quienes completaron una consulta pueden opinar.')} />
             ) : (
               <ScrollView
                 horizontal
@@ -237,7 +238,7 @@ export default function ExpertProfile() {
               <Text style={type.small}>{offerTitle(selected)}</Text>
             </View>
             <Button
-              title="Reservar"
+              title={t('Reservar')}
               iconRight="arrow-forward"
               style={{ flex: 1, maxWidth: 210 }}
               onPress={() => router.push({ pathname: '/book/[id]', params: { id: reader.id, offerId: selected.id } })}

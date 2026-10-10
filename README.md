@@ -62,6 +62,12 @@ systemctl disable --now lunara-demo
 cd /opt/lunara/server && sudo -u lunara npm run demo:purge
 ```
 
+## Mode test et langues
+
+- `TEST_MODE=1` (dans `server/.env`) : une visio « Ahora » peut être réservée même si la voyante n'est pas en ligne, et on peut entrer dans n'importe quelle visio tout de suite, sans attendre le créneau. Un badge « Modo prueba » apparaît dans le profil. **À vider avant le lancement public.**
+- L'interface est en espagnol (Pérou) par défaut, avec un mode **français** (sélecteur dans le profil et sur l'écran d'accueil). Les interprétations de l'IA suivent la langue choisie.
+- Les textes sont traduits avec `t('texte espagnol')` (`mobile/src/lib/i18n.tsx`) et le dictionnaire `mobile/src/lib/fr.ts` : tout nouveau texte doit y être ajouté.
+
 ## Services externes à configurer
 
 Sans ces clés, l'app fonctionne mais la fonction concernée renvoie un message clair (« no está disponible »).

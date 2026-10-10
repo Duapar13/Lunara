@@ -7,6 +7,7 @@ import { api, errorMessage } from '@/lib/api';
 import type { User } from '@/lib/types';
 import { Avatar } from './Avatar';
 import { colors, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 /** Avatar modifiable (galerie → upload multipart) + nom et e-mail. */
 export function ProfileHeader() {
@@ -35,7 +36,7 @@ export function ProfileHeader() {
       const res = await api<{ user: User }>('/me/avatar', { method: 'POST', form });
       setUser(res.user);
     } catch (err) {
-      Alert.alert('No se pudo subir la foto', errorMessage(err));
+      Alert.alert(t('No se pudo subir la foto'), errorMessage(err));
     } finally {
       setUploading(false);
     }

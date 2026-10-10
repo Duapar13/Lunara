@@ -7,6 +7,7 @@ import { api, errorMessage } from '@/lib/api';
 import { Button, ErrorText, Input } from '@/components/ui';
 import { colors, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 const LABELS = ['', 'Mala', 'Regular', 'Buena', 'Muy buena', 'Excelente'];
 
@@ -34,8 +35,8 @@ export default function ReviewScreen() {
   return (
     <CosmicScreen>
     <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={type.h1}>¿Cómo fue tu consulta?</Text>
-      <Text style={type.bodyMuted}>Tu reseña ayuda a otras personas a elegir. Se publica con tu nombre y la inicial de tu apellido.</Text>
+      <Text style={type.h1}>{t('¿Cómo fue tu consulta?')}</Text>
+      <Text style={type.bodyMuted}>{t('Tu reseña ayuda a otras personas a elegir. Se publica con tu nombre y la inicial de tu apellido.')}</Text>
       <View style={styles.stars}>
         {[1, 2, 3, 4, 5].map((i) => (
           <Pressable
@@ -50,17 +51,17 @@ export default function ReviewScreen() {
           </Pressable>
         ))}
       </View>
-      <Text style={[type.h3, { textAlign: 'center', minHeight: 22 }]}>{LABELS[rating]}</Text>
+      <Text style={[type.h3, { textAlign: 'center', minHeight: 22 }]}>{t(LABELS[rating])}</Text>
       <Input
-        label="Comentario (opcional)"
+        label={t('Comentario (opcional)')}
         value={comment}
         onChangeText={setComment}
         multiline
         maxLength={1000}
-        placeholder="¿Qué te pareció la lectura?"
+        placeholder={t('¿Qué te pareció la lectura?')}
       />
       <ErrorText message={error} />
-      <Button title="Publicar reseña" onPress={submit} loading={loading} disabled={!rating} />
+      <Button title={t('Publicar reseña')} onPress={submit} loading={loading} disabled={!rating} />
     </ScrollView>
     </CosmicScreen>
   );

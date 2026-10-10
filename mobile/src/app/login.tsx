@@ -7,6 +7,7 @@ import { LogoMark } from '@/components/Logo';
 import { Button, ErrorText, Input } from '@/components/ui';
 import { colors, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 export default function Login() {
   const { login } = useAuth();
@@ -33,19 +34,19 @@ export default function Login() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <LogoMark size={56} />
-        <Text style={type.h1}>Hola de nuevo</Text>
-        <Text style={type.bodyMuted}>Ingresa a tu cuenta para continuar tu camino.</Text>
+        <Text style={type.h1}>{t('Hola de nuevo')}</Text>
+        <Text style={type.bodyMuted}>{t('Ingresa a tu cuenta para continuar tu camino.')}</Text>
         <Input
-          label="Correo electrónico"
+          label={t('Correo electrónico')}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           autoComplete="email"
           keyboardType="email-address"
-          placeholder="tu@correo.com"
+          placeholder={t('tu@correo.com')}
         />
         <Input
-          label="Contraseña"
+          label={t('Contraseña')}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -54,8 +55,8 @@ export default function Login() {
           onSubmitEditing={submit}
         />
         <ErrorText message={error} />
-        <Button title="Ingresar" onPress={submit} loading={loading} disabled={!email || !password} />
-        <Button title="¿No tienes cuenta? Regístrate" variant="ghost" small onPress={() => router.replace('/register')} />
+        <Button title={t('Ingresar')} onPress={submit} loading={loading} disabled={!email || !password} />
+        <Button title={t('¿No tienes cuenta? Regístrate')} variant="ghost" small onPress={() => router.replace('/register')} />
       </ScrollView>
     </KeyboardAvoidingView>
     </CosmicScreen>

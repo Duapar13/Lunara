@@ -6,14 +6,16 @@ import { useAuth } from '@/lib/auth';
 import { ProfileHeader } from '@/components/ProfileHeader';
 import { Card, ListRow } from '@/components/ui';
 import { space, type } from '@/theme';
+import { t } from '@/lib/i18n';
+import { LanguageSwitch } from '@/components/LanguageSwitch';
 
 export default function ClientProfile() {
   const { user, logout } = useAuth();
 
   function confirmLogout() {
-    Alert.alert('Cerrar sesión', '¿Quieres cerrar tu sesión?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Cerrar sesión', style: 'destructive', onPress: () => logout().then(() => router.replace('/welcome')) },
+    Alert.alert(t('Cerrar sesión'), t('¿Quieres cerrar tu sesión?'), [
+      { text: t('Cancelar'), style: 'cancel' },
+      { text: t('Cerrar sesión'), style: 'destructive', onPress: () => logout().then(() => router.replace('/welcome')) },
     ]);
   }
 
@@ -22,25 +24,28 @@ export default function ClientProfile() {
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.content}>
         <ProfileHeader />
+        <Card>
+          <LanguageSwitch />
+        </Card>
         <Card style={styles.menu}>
-          <ListRow icon="person-outline" label="Editar perfil" onPress={() => router.push('/edit-profile')} />
-          <ListRow icon="heart-outline" label="Mis favoritos" onPress={() => router.push('/favorites')} />
-          <ListRow icon="chatbubbles-outline" label="Mis consultas" onPress={() => router.push('/(client)/consultations')} />
+          <ListRow icon="person-outline" label={t('Editar perfil')} onPress={() => router.push('/edit-profile')} />
+          <ListRow icon="heart-outline" label={t('Mis favoritos')} onPress={() => router.push('/favorites')} />
+          <ListRow icon="chatbubbles-outline" label={t('Mis consultas')} onPress={() => router.push('/(client)/consultations')} />
           {user?.role === 'admin' && (
-            <ListRow icon="shield-checkmark-outline" label="Validación de expertos" onPress={() => router.push('/admin')} />
+            <ListRow icon="shield-checkmark-outline" label={t('Validación de expertos')} onPress={() => router.push('/admin')} />
           )}
         </Card>
         <Card style={styles.menu}>
           <ListRow
             icon="help-circle-outline"
-            label="Ayuda y soporte"
+            label={t('Ayuda y soporte')}
             onPress={() => Linking.openURL('mailto:soporte@lunara.app')}
           />
-          <ListRow icon="log-out-outline" label="Cerrar sesión" danger onPress={confirmLogout} />
+          <ListRow icon="log-out-outline" label={t('Cerrar sesión')} danger onPress={confirmLogout} />
         </Card>
         <View style={{ alignItems: 'center' }}>
-          <Text style={type.small}>Las lecturas son una guía de reflexión y no reemplazan</Text>
-          <Text style={type.small}>el consejo médico, legal o financiero.</Text>
+          <Text style={type.small}>{t('Las lecturas son una guía de reflexión y no reemplazan')}</Text>
+          <Text style={type.small}>{t('el consejo médico, legal o financiero.')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

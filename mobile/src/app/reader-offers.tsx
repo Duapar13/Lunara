@@ -8,6 +8,7 @@ import type { OfferType, ReaderDashboard } from '@/lib/types';
 import { Button, Card, ErrorText, Loading } from '@/components/ui';
 import { colors, fonts, radius, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 const PACKAGES: { type: OfferType; units: number }[] = [
   { type: 'chat', units: 1 },
@@ -73,7 +74,7 @@ export default function ReaderOffers() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={type.bodyMuted}>
-          Precios fijos y transparentes en soles. Recibes el {Math.round((1 - commission) * 100)} % de cada consulta finalizada.
+          {t('Precios fijos y transparentes en soles. Recibes el {n} % de cada consulta finalizada.', { n: Math.round((1 - commission) * 100) })}
         </Text>
         {rows.map((r, i) => {
           const price = cents(r.price);
@@ -82,10 +83,10 @@ export default function ReaderOffers() {
               <Ionicons name={r.type === 'chat' ? 'chatbubble-outline' : 'videocam-outline'} size={20} color={colors.accent} />
               <View style={{ flex: 1, gap: 4 }}>
                 <Text style={type.h3}>{offerTitle(r)}</Text>
-                <Text style={type.small}>{price >= 500 ? `Recibes ${formatPrice(Math.round(price * (1 - commission)))}` : 'Mínimo S/ 5.00'}</Text>
+                <Text style={type.small}>{price >= 500 ? t('Recibes {v0}', { v0: formatPrice(Math.round(price * (1 - commission))) }) : t('Mínimo S/ 5.00')}</Text>
               </View>
               <View style={styles.priceBox}>
-                <Text style={styles.currency}>S/</Text>
+                <Text style={styles.currency}>{t('S/')}</Text>
                 <TextInput
                   value={r.price}
                   onChangeText={(v) => update(i, { price: v.replace(/[^0-9.,]/g, '') })}
@@ -106,7 +107,7 @@ export default function ReaderOffers() {
           );
         })}
         <ErrorText message={error} />
-        <Button title="Guardar precios" onPress={save} loading={saving} disabled={invalid} />
+        <Button title={t('Guardar precios')} onPress={save} loading={saving} disabled={invalid} />
       </ScrollView>
     </KeyboardAvoidingView>
     </CosmicScreen>

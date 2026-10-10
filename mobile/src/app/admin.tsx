@@ -7,6 +7,7 @@ import { Avatar } from '@/components/Avatar';
 import { Button, Card, Chip, EmptyState, Loading } from '@/components/ui';
 import { space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 const STATUSES = [
   { key: 'pending', label: 'Pendientes' },
@@ -24,7 +25,7 @@ export default function Admin() {
       await api(`/admin/readers/${reader.id}/status`, { method: 'POST', body: { status: next } });
       reload();
     } catch (err) {
-      Alert.alert('Error', errorMessage(err));
+      Alert.alert(t('Error'), errorMessage(err));
     }
   }
 
@@ -37,11 +38,11 @@ export default function Admin() {
       ListHeaderComponent={
         <View style={styles.filters}>
           {STATUSES.map((s) => (
-            <Chip key={s.key} label={s.label} selected={status === s.key} onPress={() => setStatus(s.key)} />
+            <Chip key={s.key} label={t(s.label)} selected={status === s.key} onPress={() => setStatus(s.key)} />
           ))}
         </View>
       }
-      ListEmptyComponent={loading ? <Loading /> : <EmptyState icon="checkmark-done-outline" title="Nada por revisar" />}
+      ListEmptyComponent={loading ? <Loading /> : <EmptyState icon="checkmark-done-outline" title={t('Nada por revisar')} />}
       renderItem={({ item }) => (
         <Card style={{ gap: space.md }}>
           <View style={styles.head}>
@@ -54,12 +55,12 @@ export default function Admin() {
           {!!item.headline && <Text style={type.body}>{item.headline}</Text>}
           {!!item.bio && <Text style={type.small}>{item.bio}</Text>}
           <Text style={type.small}>
-            {item.specialties.join(' · ')} · {item.yearsExperience} años de experiencia
+            {item.specialties.map((s) => t(s)).join(' · ')} · {t('{n} años de experiencia', { n: item.yearsExperience })}
           </Text>
           <View style={styles.actions}>
-            {status !== 'approved' && <Button title="Aprobar" small onPress={() => decide(item, 'approved')} style={{ flex: 1 }} />}
+            {status !== 'approved' && <Button title={t('Aprobar')} small onPress={() => decide(item, 'approved')} style={{ flex: 1 }} />}
             {status !== 'rejected' && (
-              <Button title="Rechazar" small variant="secondary" onPress={() => decide(item, 'rejected')} style={{ flex: 1 }} />
+              <Button title={t('Rechazar')} small variant="secondary" onPress={() => decide(item, 'rejected')} style={{ flex: 1 }} />
             )}
           </View>
         </Card>

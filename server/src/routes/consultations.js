@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { query, one } from '../db.js';
+import { config } from '../config.js';
 import { parse, badRequest, forbidden, HttpError } from '../http.js';
 import { requireAuth } from '../middleware/auth.js';
 import { isConnected } from '../realtime.js';
@@ -62,7 +63,7 @@ router.post('/', requireAuth('client'), async (req, res) => {
     const wanted = new Date(data.scheduledAt).toISOString();
     if (!days.some((d) => d.slots.includes(wanted))) throw badRequest('Este horario ya no está disponible');
     scheduledAt = new Date(wanted);
-  } else if (!reader.is_available || !isConnected(data.readerId)) {
+  } else if (!config.testMode && (!reader.is_available || !isConnected(data.readerId))) {
     throw badRequest('El experto no está en línea ahora. Elige un horario.');
   }
 
@@ -82,6 +83,11 @@ router.post('/:id/messages', async (req, res) => {
 /** Fenêtre pendant laquelle on peut rejoindre la visio. */
 function videoWindow(c) {
   const durationMs = c.units * 60_000;
+  if (config.testMode) {
+    // Mode test : on entre quand on veut, la séance dure à partir de la première entrée.
+    const start = c.started_at ? new Date(c.started_at).getTime() : Date.now();
+    return { opensAt: 0, endsAt: start + durationMs + 10 * 60_000 };
+  }
   if (c.scheduled_at) {
     const start = new Date(c.scheduled_at).getTime();
     return { opensAt: start - 10 * 60_000, endsAt: start + durationMs + 10 * 60_000 };

@@ -7,6 +7,7 @@ import { errorMessage } from '@/lib/api';
 import { Button, ErrorText, Input } from '@/components/ui';
 import { colors, fonts, radius, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
 
 const ROLES = [
   { key: 'client', icon: 'sparkles-outline', title: 'Busco una consulta', text: 'Encuentra expertos y reserva tu lectura.' },
@@ -41,7 +42,7 @@ export default function Register() {
     <CosmicScreen>
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={type.h1}>Crea tu cuenta</Text>
+        <Text style={type.h1}>{t('Crea tu cuenta')}</Text>
 
         <View style={styles.roles}>
           {ROLES.map((r) => {
@@ -49,54 +50,53 @@ export default function Register() {
             return (
               <Pressable key={r.key} onPress={() => setRole(r.key)} style={[styles.role, selected && styles.roleSelected]}>
                 <Ionicons name={r.icon} size={22} color={selected ? colors.cream : colors.accent} />
-                <Text style={styles.roleTitle}>{r.title}</Text>
-                <Text style={type.small}>{r.text}</Text>
+                <Text style={styles.roleTitle}>{t(r.title)}</Text>
+                <Text style={type.small}>{t(r.text)}</Text>
               </Pressable>
             );
           })}
         </View>
 
-        <Input label="Nombre y apellido" value={name} onChangeText={setName} placeholder="Ej. Lucía Ramos" autoComplete="name" />
+        <Input label={t('Nombre y apellido')} value={name} onChangeText={setName} placeholder={t('Ej. Lucía Ramos')} autoComplete="name" />
         <Input
-          label="Correo electrónico"
+          label={t('Correo electrónico')}
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
           keyboardType="email-address"
           autoComplete="email"
-          placeholder="tu@correo.com"
+          placeholder={t('tu@correo.com')}
         />
         <Input
-          label="Contraseña"
+          label={t('Contraseña')}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           autoComplete="new-password"
-          placeholder="Mínimo 8 caracteres"
+          placeholder={t('Mínimo 8 caracteres')}
         />
 
         <Pressable style={styles.check} onPress={() => setAdult(!adult)}>
           <Ionicons name={adult ? 'checkbox' : 'square-outline'} size={22} color={adult ? colors.primary : colors.textMuted} />
           <Text style={[type.small, { flex: 1 }]}>
-            Confirmo que soy mayor de 18 años y entiendo que las lecturas son una guía de reflexión.
+            {t('Confirmo que soy mayor de 18 años y entiendo que las lecturas son una guía de reflexión.')}
           </Text>
         </Pressable>
 
         {role === 'reader' && (
           <Text style={styles.note}>
-            Revisaremos tu perfil antes de publicarlo. Podrás completar tu presentación, tus precios y tus horarios
-            mientras tanto.
+            {t('Revisaremos tu perfil antes de publicarlo. Podrás completar tu presentación, tus precios y tus horarios mientras tanto.')}
           </Text>
         )}
 
         <ErrorText message={error} />
         <Button
-          title="Crear cuenta"
+          title={t('Crear cuenta')}
           onPress={submit}
           loading={loading}
           disabled={!name || !email || password.length < 8 || !adult}
         />
-        <Button title="Ya tengo cuenta" variant="ghost" small onPress={() => router.replace('/login')} />
+        <Button title={t('Ya tengo cuenta')} variant="ghost" small onPress={() => router.replace('/login')} />
       </ScrollView>
     </KeyboardAvoidingView>
     </CosmicScreen>

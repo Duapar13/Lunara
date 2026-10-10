@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api, errorMessage } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useSocket, useSocketEvent } from '@/lib/socket';
-import { formatDateTime, formatPrice, formatTime, offerTitle, STATUS_LABEL, topicLabel, videoOpensAt } from '@/lib/format';
+import { formatDateTime, formatPrice, formatTime, offerTitle, statusLabel, topicLabel, videoOpensAt } from '@/lib/format';
 import { SPREAD_POSITIONS } from '@/lib/tarot';
 import type { Consultation, Message } from '@/lib/types';
 import { Avatar } from '@/components/Avatar';
@@ -26,6 +26,8 @@ import { Button, Card, ErrorText, Loading, Stars } from '@/components/ui';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, gradients, radius, space, type } from '@/theme';
 import { CosmicScreen } from '@/components/Cosmic';
+import { t } from '@/lib/i18n';
+import { useAppConfig } from '@/lib/appConfig';
 
 type Detail = { consultation: Consultation; messages: Message[]; review: { rating: number; comment: string | null } | null };
 
@@ -33,6 +35,7 @@ export default function ConsultationScreen() {
   const id = Number(useLocalSearchParams<{ id: string }>().id);
   const { user } = useAuth();
   const { socket, setActiveConsultation } = useSocket();
+  const { testMode } = useAppConfig();
   const [c, setC] = useState<Consultation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [review, setReview] = useState<Detail['review']>(null);
@@ -124,7 +127,7 @@ export default function ConsultationScreen() {
           consultationId: id,
           body,
         });
-        if (res.error || !res.message) throw new Error(res.error ?? 'No se pudo enviar');
+        if (res.error || !res.message) throw new Error(res.error ?? t('No se pudo enviar'));
         message = res.message;
       } else {
         message = (await api<{ message: Message }>(`/consultations/${id}/messages`, { method: 'POST', body: { body } })).message;
@@ -134,7 +137,7 @@ export default function ConsultationScreen() {
       addMessage(message);
       setDraft('');
     } catch (err) {
-      Alert.alert('Mensaje no enviado', errorMessage(err));
+      Alert.alert(t('Mensaje no enviado'), errorMessage(err));
     } finally {
       setSending(false);
     }
@@ -149,8 +152,8 @@ export default function ConsultationScreen() {
   }
 
   async function action(path: string, confirm: { title: string; text: string; cta: string }) {
-    Alert.alert(confirm.title, confirm.text, [
-      { text: 'Volver', style: 'cancel' },
+    Alert.alert(t(confirm.title), t(confirm.text), [
+      { text: t('Volver'), style: 'cancel' },
       {
         text: confirm.cta,
         style: 'destructive',
@@ -160,7 +163,7 @@ export default function ConsultationScreen() {
             const res = await api<{ consultation: Consultation }>(`/consultations/${id}/${path}`, { method: 'POST' });
             setC(res.consultation);
           } catch (err) {
-            Alert.alert('Error', errorMessage(err));
+            Alert.alert(t('Error'), errorMessage(err));
           } finally {
             setBusy(false);
           }
@@ -169,7 +172,7 @@ export default function ConsultationScreen() {
     ]);
   }
 
-  const opensAt = videoOpensAt(c);
+  const opensAt = videoOpensAt(c, testMode);
   const videoOpen = c.type === 'video' && open && now >= opensAt;
 
   const header = (
@@ -183,7 +186,7 @@ export default function ConsultationScreen() {
               {offerTitle(c)} · {topicLabel(c.topic)}
             </Text>
           </View>
-          <Text style={styles.status}>{STATUS_LABEL[c.status]}</Text>
+          <Text style={styles.status}>{statusLabel(c.status)}</Text>
         </View>
 
         {c.type === 'video' && c.scheduledAt && (
@@ -196,7 +199,7 @@ export default function ConsultationScreen() {
           <View style={styles.infoRow}>
             <Ionicons name="help-circle-outline" size={16} color={colors.accent} />
             <Text style={type.body}>
-              Preguntas usadas: {c.questionsUsed}/{c.units}
+              {t('Preguntas usadas: {used}/{total}', { used: c.questionsUsed, total: c.units })}
             </Text>
           </View>
         )}
@@ -204,7 +207,7 @@ export default function ConsultationScreen() {
 
         {c.type === 'video' && open && (
           <Button
-            title={videoOpen ? 'Entrar a la videollamada' : `Disponible desde las ${formatTime(new Date(opensAt).toISOString())}`}
+            title={videoOpen ? t('Entrar a la videollamada') : t('Disponible desde las {v0}', { v0: formatTime(new Date(opensAt).toISOString()) })}
             icon="videocam"
             disabled={!videoOpen}
             onPress={() => router.push(`/video/${c.id}`)}
@@ -213,7 +216,7 @@ export default function ConsultationScreen() {
 
         {isReader && (open || (c.status === 'completed' && !c.readingCards)) && (
           <Button
-            title={c.readingCards ? 'Editar tirada' : 'Registrar tirada'}
+            title={c.readingCards ? t('Editar tirada') : t('Registrar tirada')}
             variant="secondary"
             icon="albums-outline"
             onPress={() => router.push(`/reading/${c.id}`)}
@@ -221,24 +224,24 @@ export default function ConsultationScreen() {
         )}
         {isReader && open && (
           <Button
-            title="Finalizar consulta"
+            title={t('Finalizar consulta')}
             variant="secondary"
             loading={busy}
             onPress={() =>
               action('complete', {
-                title: 'Finalizar consulta',
-                text: 'El cliente ya no podrá escribir y podrá dejar su reseña.',
-                cta: 'Finalizar',
+                title: t('Finalizar consulta'),
+                text: t('El cliente ya no podrá escribir y podrá dejar su reseña.'),
+                cta: t('Finalizar'),
               })
             }
           />
         )}
         {!isReader && c.status === 'completed' && !c.reviewRating && !review && (
-          <Button title="Dejar mi reseña" icon="star-outline" onPress={() => router.push(`/review/${c.id}`)} />
+          <Button title={t('Dejar mi reseña')} icon="star-outline" onPress={() => router.push(`/review/${c.id}`)} />
         )}
         {!isReader && c.readingCards && (
           <Button
-            title="Profundizar con IA"
+            title={t('Profundizar con IA')}
             variant="secondary"
             icon="sparkles-outline"
             onPress={() => router.push(`/deepen/${c.id}`)}
@@ -246,35 +249,35 @@ export default function ConsultationScreen() {
         )}
         {c.status === 'paid' && !c.startedAt && (
           <Button
-            title="Cancelar y reembolsar"
+            title={t('Cancelar y reembolsar')}
             variant="ghost"
             small
             loading={busy}
             onPress={() =>
               action('cancel', {
-                title: 'Cancelar consulta',
-                text: `Se reembolsará ${formatPrice(c.priceCents)} al medio de pago original.`,
-                cta: 'Cancelar consulta',
+                title: t('Cancelar consulta'),
+                text: t('Se reembolsará {v0} al medio de pago original.', { v0: formatPrice(c.priceCents) }),
+                cta: t('Cancelar consulta'),
               })
             }
           />
         )}
         {c.status === 'pending_payment' && (
           <Button
-            title="Cancelar reserva"
+            title={t('Cancelar reserva')}
             variant="ghost"
             small
-            onPress={() => action('cancel', { title: 'Cancelar reserva', text: 'Esta reserva no fue pagada.', cta: 'Cancelar' })}
+            onPress={() => action('cancel', { title: t('Cancelar reserva'), text: t('Esta reserva no fue pagada.'), cta: t('Cancelar') })}
           />
         )}
       </Card>
 
       {c.readingCards && (
         <Card style={{ gap: space.md }}>
-          <Text style={styles.label}>LA TIRADA DE {c.reader.name.split(' ')[0].toUpperCase()}</Text>
+          <Text style={styles.label}>{t('LA TIRADA DE {name}', { name: c.reader.name.split(' ')[0].toUpperCase() })}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
             {c.readingCards.map((card, i) => (
-              <TarotCard key={`${card.id}-${i}`} card={card} faceUp width={70} label={SPREAD_POSITIONS[i] ?? `Carta ${i + 1}`} />
+              <TarotCard key={`${card.id}-${i}`} card={card} faceUp width={70} label={SPREAD_POSITIONS[i] ?? t('Carta {v0}', { v0: i + 1 })} />
             ))}
           </ScrollView>
           {!!c.readerNotes && <Text style={type.bodyMuted}>{c.readerNotes}</Text>}
@@ -283,7 +286,7 @@ export default function ConsultationScreen() {
 
       {review && (
         <Card style={{ gap: 6 }}>
-          <Text style={styles.label}>RESEÑA</Text>
+          <Text style={styles.label}>{t('RESEÑA')}</Text>
           <Stars value={review.rating} />
           {!!review.comment && <Text style={type.bodyMuted}>{review.comment}</Text>}
         </Card>
@@ -302,7 +305,7 @@ export default function ConsultationScreen() {
           keyExtractor={(m) => String(m.id)}
           contentContainerStyle={styles.list}
           ListFooterComponent={header}
-          ListHeaderComponent={typing ? <Text style={styles.typing}>{other.name.split(' ')[0]} está escribiendo…</Text> : null}
+          ListHeaderComponent={typing ? <Text style={styles.typing}>{t('{name} está escribiendo…', { name: other.name.split(' ')[0] })}</Text> : null}
           renderItem={({ item }) => {
             const mine = item.senderId === user.id;
             const questionNumber = item.isQuestion
@@ -312,7 +315,7 @@ export default function ConsultationScreen() {
               <View style={[styles.bubbleWrap, mine ? { alignItems: 'flex-end' } : { alignItems: 'flex-start' }]}>
                 {questionNumber && (
                   <Text style={styles.qLabel}>
-                    Pregunta {questionNumber}/{c.units}
+                    {t('Pregunta {n}/{total}', { n: questionNumber, total: c.units })}
                   </Text>
                 )}
                 {mine ? (
@@ -340,7 +343,7 @@ export default function ConsultationScreen() {
               <TextInput
                 value={draft}
                 onChangeText={onDraftChange}
-                placeholder={isReader ? 'Escribe tu respuesta…' : `Escribe tu pregunta (${questionsLeft} restantes)`}
+                placeholder={isReader ? t('Escribe tu respuesta…') : t('Escribe tu pregunta ({v0} restantes)', { v0: questionsLeft })}
                 placeholderTextColor={colors.textFaint}
                 selectionColor={colors.accent}
                 style={styles.input}
@@ -353,7 +356,7 @@ export default function ConsultationScreen() {
             </>
           ) : (
             <Text style={[type.small, { flex: 1, textAlign: 'center', paddingVertical: 8 }]}>
-              Usaste tus {c.units} preguntas. {c.reader.name.split(' ')[0]} responderá y cerrará la consulta.
+              {t('Usaste tus {n} preguntas. {name} responderá y cerrará la consulta.', { n: c.units, name: c.reader.name.split(' ')[0] })}
             </Text>
           )}
         </SafeAreaView>
@@ -366,18 +369,18 @@ export default function ConsultationScreen() {
 function StatusHint({ c, isReader }: { c: Consultation; isReader: boolean }) {
   const name = c.reader.name.split(' ')[0];
   let text: string | null = null;
-  if (c.status === 'pending_payment') text = 'Esta reserva aún no fue pagada.';
+  if (c.status === 'pending_payment') text = t('Esta reserva aún no fue pagada.');
   else if (c.status === 'paid' && c.type === 'chat')
-    text = isReader ? 'Nueva consulta pagada. Responde para iniciarla.' : `Consulta confirmada. ${name} te responderá pronto.`;
+    text = isReader ? t('Nueva consulta pagada. Responde para iniciarla.') : t('Consulta confirmada. {name} te responderá pronto.', { name });
   else if (c.status === 'paid' && c.type === 'video')
     text = c.scheduledAt
-      ? 'Podrás entrar 10 minutos antes de la hora reservada.'
+      ? t('Podrás entrar 10 minutos antes de la hora reservada.')
       : isReader
-        ? 'El cliente quiere empezar ahora. Entra a la videollamada.'
-        : `${name} está en línea. Entra cuando quieras.`;
-  else if (c.status === 'completed') text = `Consulta finalizada${c.endedAt ? ` el ${formatDateTime(c.endedAt)}` : ''}.`;
-  else if (c.status === 'refunded') text = 'Consulta cancelada y reembolsada.';
-  else if (c.status === 'cancelled') text = 'Consulta cancelada.';
+        ? t('El cliente quiere empezar ahora. Entra a la videollamada.')
+        : t('{name} está en línea. Entra cuando quieras.', { name });
+  else if (c.status === 'completed') text = c.endedAt ? t('Consulta finalizada el {date}.', { date: formatDateTime(c.endedAt) }) : t('Consulta finalizada.');
+  else if (c.status === 'refunded') text = t('Consulta cancelada y reembolsada.');
+  else if (c.status === 'cancelled') text = t('Consulta cancelada.');
   if (!text) return null;
   return <Text style={type.small}>{text}</Text>;
 }

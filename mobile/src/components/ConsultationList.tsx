@@ -7,6 +7,7 @@ import { useConsultations } from '@/lib/hooks';
 import { ConsultationRow } from './ConsultationRow';
 import { Button, EmptyState, ErrorText, Loading } from './ui';
 import { colors, fonts, radius, space, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 /** Liste « Activas / Historial » partagée par l'espace client et l'espace voyante. */
 export function ConsultationList({ viewer, title }: { viewer: 'client' | 'reader'; title: string }) {
@@ -25,12 +26,12 @@ export function ConsultationList({ viewer, title }: { viewer: 'client' | 'reader
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.accent} />}
         ListHeaderComponent={
           <View style={{ gap: space.lg, paddingTop: space.lg, paddingBottom: space.lg }}>
-            <Text style={type.h1}>{title}</Text>
+            <Text style={type.h1}>{t(title)}</Text>
             <View style={styles.segment}>
               {(['active', 'history'] as const).map((s) => (
                 <Pressable key={s} onPress={() => setScope(s)} style={[styles.segmentItem, scope === s && styles.segmentActive]}>
                   <Text style={[styles.segmentText, scope === s && { color: colors.cream }]}>
-                    {s === 'active' ? 'Activas' : 'Historial'}
+                    {s === 'active' ? t('Activas') : t('Historial')}
                   </Text>
                 </Pressable>
               ))}
@@ -44,15 +45,15 @@ export function ConsultationList({ viewer, title }: { viewer: 'client' | 'reader
           ) : (
             <EmptyState
               icon={scope === 'active' ? 'calendar-outline' : 'time-outline'}
-              title={scope === 'active' ? 'No tienes consultas activas' : 'Aún no hay historial'}
+              title={scope === 'active' ? t('No tienes consultas activas') : t('Aún no hay historial')}
               text={
                 viewer === 'client'
-                  ? 'Reserva una consulta con un experto verificado.'
-                  : 'Activa tu disponibilidad para recibir consultas.'
+                  ? t('Reserva una consulta con un experto verificado.')
+                  : t('Activa tu disponibilidad para recibir consultas.')
               }
               action={
                 viewer === 'client' && scope === 'active' ? (
-                  <Button title="Encontrar un experto" small onPress={() => router.push('/(client)/explore')} />
+                  <Button title={t('Encontrar un experto')} small onPress={() => router.push('/(client)/explore')} />
                 ) : undefined
               }
             />

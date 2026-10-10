@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, Line, LinearGradient, Mask, Path, Rect, Stop } from 'react-native-svg';
 import { GradientText } from './Cosmic';
 import { colors, fonts } from '@/theme';
+import { t } from '@/lib/i18n';
 
 function starPath(cx: number, cy: number, outer: number, inner: number) {
   const pts: string[] = [];
@@ -49,7 +50,7 @@ export function Logo({ size = 40, tagline = false, layout = 'row' }: LogoProps) 
       <LogoMark size={size} />
       <View style={column && styles.columnText}>
         <GradientText style={[styles.word, { fontSize: size * (column ? 0.62 : 0.6) }]}>Lunara</GradientText>
-        {tagline && <Text style={styles.tagline}>TAROT Y GUÍA ESPIRITUAL</Text>}
+        {tagline && <Text style={styles.tagline}>{t('TAROT Y GUÍA ESPIRITUAL')}</Text>}
       </View>
     </View>
   );

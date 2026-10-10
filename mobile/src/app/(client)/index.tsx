@@ -14,6 +14,7 @@ import { CosmicScreen, Float, GlassCard, GradientText } from '@/components/Cosmi
 import { MoonWidget } from '@/components/MoonWidget';
 import { EmptyState, ErrorText, Loading, PressableScale, SectionHeader } from '@/components/ui';
 import { colors, fonts, radius, space, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 const CATEGORIES = [
   { label: 'Amor', icon: 'heart', tint: ['#FF7AB6', '#8B3A7A'] },
@@ -33,7 +34,7 @@ const STEPS = [
 
 function greeting() {
   const h = new Date().getHours();
-  return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+  return h < 12 ? t('Buenos días') : h < 19 ? t('Buenas tardes') : t('Buenas noches');
 }
 
 export default function Home() {
@@ -60,11 +61,11 @@ export default function Home() {
           <View style={styles.pad}>
             <Text style={styles.hello}>{greeting()},</Text>
             <GradientText style={styles.name}>{firstName(user?.name ?? '')}</GradientText>
-            <Text style={[type.bodyMuted, { marginTop: 6 }]}>¿Qué te gustaría descubrir hoy?</Text>
+            <Text style={[type.bodyMuted, { marginTop: 6 }]}>{t('¿Qué te gustaría descubrir hoy?')}</Text>
             <PressableScale onPress={() => router.push('/(client)/explore')} style={{ marginTop: space.lg }}>
               <GlassCard contentStyle={styles.search}>
                 <Ionicons name="search" size={18} color={colors.accent} />
-                <Text style={styles.searchText}>Busca un experto, un tema…</Text>
+                <Text style={styles.searchText}>{t('Busca un experto, un tema…')}</Text>
                 <View style={styles.searchBtn}>
                   <Ionicons name="options-outline" size={16} color={colors.cream} />
                 </View>
@@ -79,7 +80,7 @@ export default function Home() {
           {online.length > 0 && (
             <View style={{ gap: space.md }}>
               <View style={styles.pad}>
-                <SectionHeader title="En línea ahora" />
+                <SectionHeader title={t('En línea ahora')} />
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.stories}>
                 {online.map((r) => (
@@ -100,7 +101,7 @@ export default function Home() {
 
           <View style={{ gap: space.md }}>
             <View style={styles.pad}>
-              <SectionHeader title="Expertos destacados" action="Ver todos" onAction={() => router.push('/(client)/explore')} />
+              <SectionHeader title={t('Expertos destacados')} action={t('Ver todos')} onAction={() => router.push('/(client)/explore')} />
             </View>
             {loading && <Loading />}
             <View style={styles.pad}>
@@ -120,7 +121,7 @@ export default function Home() {
           </View>
 
           <View style={[styles.pad, { gap: space.md }]}>
-            <SectionHeader title="¿Qué te preocupa?" />
+            <SectionHeader title={t('¿Qué te preocupa?')} />
             <View style={styles.grid}>
               {CATEGORIES.map((c) => (
                 <PressableScale
@@ -132,7 +133,7 @@ export default function Home() {
                     <LinearGradient colors={c.tint} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.tileIcon}>
                       <Ionicons name={c.icon} size={20} color={colors.white} />
                     </LinearGradient>
-                    <Text style={styles.tileText}>{c.label}</Text>
+                    <Text style={styles.tileText}>{t(c.label)}</Text>
                   </GlassCard>
                 </PressableScale>
               ))}
@@ -148,11 +149,11 @@ export default function Home() {
             >
               <LinearGradient colors={['#2A1F5C', '#140F2A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.daily}>
                 <View style={{ flex: 1, gap: 8 }}>
-                  <Text style={styles.dailyLabel}>✦ TIRADA DEL DÍA</Text>
-                  <GradientText style={styles.dailyTitle}>Elige 3 cartas</GradientText>
-                  <Text style={type.small}>Pasado, presente y futuro, interpretados al instante.</Text>
+                  <Text style={styles.dailyLabel}>{t('✦ TIRADA DEL DÍA')}</Text>
+                  <GradientText style={styles.dailyTitle}>{t('Elige 3 cartas')}</GradientText>
+                  <Text style={type.small}>{t('Pasado, presente y futuro, interpretados al instante.')}</Text>
                   <View style={styles.dailyCta}>
-                    <Text style={styles.dailyCtaText}>Empezar</Text>
+                    <Text style={styles.dailyCtaText}>{t('Empezar')}</Text>
                     <Ionicons name="arrow-forward" size={14} color={colors.gold} />
                   </View>
                 </View>
@@ -176,9 +177,9 @@ export default function Home() {
           </PressableScale>
 
           <View style={[styles.pad, { gap: space.md }]}>
-            <SectionHeader title="Todos los expertos" action="Explorar" onAction={() => router.push('/(client)/explore')} />
+            <SectionHeader title={t('Todos los expertos')} action={t('Explorar')} onAction={() => router.push('/(client)/explore')} />
             {!loading && !error && !readers.length && (
-              <EmptyState icon="moon-outline" title="Pronto habrá expertos aquí" text="Estamos verificando los primeros perfiles." />
+              <EmptyState icon="moon-outline" title={t('Pronto habrá expertos aquí')} text={t('Estamos verificando los primeros perfiles.')} />
             )}
             {readers.slice(0, 5).map((r) => (
               <ReaderCard key={r.id} reader={r} onToggleFavorite={toggleFavorite} />
@@ -186,7 +187,7 @@ export default function Home() {
           </View>
 
           <View style={[styles.pad, { gap: space.md }]}>
-            <SectionHeader title="¿Cómo funciona?" />
+            <SectionHeader title={t('¿Cómo funciona?')} />
             <GlassCard contentStyle={{ gap: 18 }}>
               {STEPS.map((s, i) => (
                 <View key={s.title} style={styles.step}>
@@ -194,8 +195,8 @@ export default function Home() {
                     <Text style={styles.stepNumText}>{i + 1}</Text>
                   </LinearGradient>
                   <View style={{ flex: 1 }}>
-                    <Text style={type.h3}>{s.title}</Text>
-                    <Text style={type.small}>{s.text}</Text>
+                    <Text style={type.h3}>{t(s.title)}</Text>
+                    <Text style={type.small}>{t(s.text)}</Text>
                   </View>
                   <Ionicons name={s.icon} size={22} color={colors.accent} />
                 </View>

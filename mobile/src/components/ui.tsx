@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { colors, fonts, gradients, radius, space, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 type ButtonProps = {
   title: string;
@@ -203,7 +204,7 @@ export function OnlineDot({ online, label }: { online: boolean; label?: boolean 
       <View style={[styles.dot, { backgroundColor: online ? colors.success : colors.textFaint }]} />
       {label && (
         <Text style={[styles.onlineText, { color: online ? colors.success : colors.textFaint }]}>
-          {online ? 'En línea' : 'Desconectado'}
+          {online ? t('En línea') : t('Desconectado')}
         </Text>
       )}
     </View>
@@ -226,7 +227,7 @@ export function Stars({ value, size = 14 }: { value: number; size?: number }) {
 }
 
 export function Rating({ avg, count }: { avg: number; count: number }) {
-  if (!count) return <Badge label="Nuevo en Lunara" tone="gold" />;
+  if (!count) return <Badge label={t('Nuevo en Lunara')} tone="gold" />;
   return (
     <View style={styles.ratingRow}>
       <Ionicons name="star" size={13} color={colors.gold} />

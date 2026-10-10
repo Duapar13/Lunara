@@ -27,6 +27,7 @@ const dailySchema = z.object({
   cards: z.array(cardSchema).length(3),
   question: z.string().trim().max(500).optional(),
   topic: z.enum(TOPICS).optional(),
+  lang: z.enum(['es', 'fr']).default('es'),
 });
 
 router.post('/daily', async (req, res) => {
@@ -44,10 +45,11 @@ router.post('/daily', async (req, res) => {
 const deepenSchema = z.object({
   consultationId: z.number().int().positive(),
   question: z.string().trim().min(3).max(500),
+  lang: z.enum(['es', 'fr']).default('es'),
 });
 
 router.post('/deepen', async (req, res) => {
-  const { consultationId, question } = parse(deepenSchema, req.body);
+  const { consultationId, question, lang } = parse(deepenSchema, req.body);
   const c = await loadForUser(consultationId, req.user);
   if (c.client_id !== req.user.id) throw forbidden();
   const cards = json(c.reading_cards, null);
@@ -58,6 +60,7 @@ router.post('/deepen', async (req, res) => {
     readerNotes: c.reader_notes,
     intakeQuestion: c.intake_question,
     question,
+    lang,
   });
   const r = await query(
     "INSERT INTO ai_readings (user_id, consultation_id, kind, cards, question, response) VALUES (?, ?, 'deepen', ?, ?, ?)",

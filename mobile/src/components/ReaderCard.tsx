@@ -8,6 +8,7 @@ import { PressableScale, Rating } from './ui';
 import { formatPrice } from '@/lib/format';
 import type { Reader } from '@/lib/types';
 import { avatarGradients, colors, fonts, radius, type } from '@/theme';
+import { t } from '@/lib/i18n';
 
 type Props = { reader: Reader; onToggleFavorite?: (reader: Reader) => void };
 
@@ -38,14 +39,14 @@ export function ReaderCard({ reader, onToggleFavorite }: Props) {
             <Ionicons name="checkmark-circle" size={15} color={colors.accent} />
           </View>
           <Text style={type.small} numberOfLines={1}>
-            {reader.headline || reader.specialties.join(' · ')}
+            {reader.headline || reader.specialties.map((s) => t(s)).join(' · ')}
           </Text>
           <View style={styles.metaRow}>
             <Rating avg={reader.ratingAvg} count={reader.ratingCount} />
             {reader.online && (
               <View style={styles.onlineTag}>
                 <LivePulse size={6} />
-                <Text style={styles.online}>En línea</Text>
+                <Text style={styles.online}>{t('En línea')}</Text>
               </View>
             )}
           </View>
@@ -54,7 +55,7 @@ export function ReaderCard({ reader, onToggleFavorite }: Props) {
           <Heart reader={reader} onToggleFavorite={onToggleFavorite} />
           {reader.fromPriceCents != null && (
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.from}>desde</Text>
+              <Text style={styles.from}>{t('desde')}</Text>
               <Text style={styles.price}>{formatPrice(reader.fromPriceCents)}</Text>
             </View>
           )}
@@ -82,7 +83,7 @@ export function FeaturedReaderCard({ reader, onToggleFavorite, width = 250 }: Pr
             {reader.online ? (
               <View style={styles.livePill}>
                 <LivePulse size={7} />
-                <Text style={styles.livePillText}>En línea</Text>
+                <Text style={styles.livePillText}>{t('En línea')}</Text>
               </View>
             ) : (
               <View />
@@ -93,13 +94,13 @@ export function FeaturedReaderCard({ reader, onToggleFavorite, width = 250 }: Pr
             <Avatar name={reader.name} url={reader.avatarUrl} size={96} ring />
             <GradientText style={styles.featuredName}>{reader.name}</GradientText>
             <Text style={[type.small, { textAlign: 'center' }]} numberOfLines={1}>
-              {reader.specialties.slice(0, 3).join(' · ')}
+              {reader.specialties.slice(0, 3).map((s) => t(s)).join(' · ')}
             </Text>
             <Rating avg={reader.ratingAvg} count={reader.ratingCount} />
           </View>
           <View style={styles.featuredFooter}>
             <View>
-              <Text style={styles.from}>desde</Text>
+              <Text style={styles.from}>{t('desde')}</Text>
               <Text style={styles.price}>{reader.fromPriceCents != null ? formatPrice(reader.fromPriceCents) : '—'}</Text>
             </View>
             <View style={styles.go}>
