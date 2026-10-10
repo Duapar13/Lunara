@@ -27,7 +27,21 @@ app.post('/payments/stripe/webhook', express.raw({ type: 'application/json' }), 
 app.use(express.json({ limit: '100kb' }));
 app.use('/uploads', express.static(fileURLToPath(UPLOAD_DIR), { maxAge: '30d' }));
 // Page de visio maison (WebRTC), ouverte dans la WebView de l'app.
-app.use('/call', express.static(fileURLToPath(new URL('../public/call/', import.meta.url)), { maxAge: '1h' }));
+// Elle peut aussi être intégrée en iframe par la version web de l'app : seule cette page lève
+// l'interdiction d'intégration (l'accès reste protégé par le jeton d'appel).
+app.use(
+  '/call',
+  (_req, res, next) => {
+    res.removeHeader('X-Frame-Options');
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; " +
+        "connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors *",
+    );
+    next();
+  },
+  express.static(fileURLToPath(new URL('../public/call/', import.meta.url)), { maxAge: '1h' }),
+);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/config', (_req, res) => res.json({ testMode: config.testMode }));

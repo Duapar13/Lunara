@@ -55,7 +55,11 @@
   $('peer-label').textContent = peerName;
 
   /** Prévient l'app React Native (fermeture de l'écran, etc.). */
-  const notifyApp = (type) => window.ReactNativeWebView?.postMessage(JSON.stringify({ type }));
+  const notifyApp = (type) => {
+    const message = JSON.stringify({ source: 'lunara-call', type });
+    if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(message);
+    else if (window.parent !== window) window.parent.postMessage(message, '*'); // version web (iframe)
+  };
 
   function setState(state, message) {
     stage.classList.remove('connected', 'ended', 'error');
