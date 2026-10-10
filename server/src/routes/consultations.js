@@ -7,7 +7,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { isConnected } from '../realtime.js';
 import * as consultations from '../services/consultations.js';
 import { videoSlots } from '../services/slots.js';
-import { createRoom, createToken, roomUrl } from '../services/daily.js';
+import { callToken, iceServers, videoWindow } from '../services/call.js';
 import { refundConsultation } from '../services/payments.js';
 
 export const router = Router();
@@ -80,48 +80,34 @@ router.post('/:id/messages', async (req, res) => {
   res.status(201).json({ message });
 });
 
-/** Fenêtre pendant laquelle on peut rejoindre la visio. */
-function videoWindow(c) {
-  const durationMs = c.units * 60_000;
-  if (config.testMode) {
-    // Mode test : on entre quand on veut, la séance dure à partir de la première entrée.
-    const start = c.started_at ? new Date(c.started_at).getTime() : Date.now();
-    return { opensAt: 0, endsAt: start + durationMs + 10 * 60_000 };
-  }
-  if (c.scheduled_at) {
-    const start = new Date(c.scheduled_at).getTime();
-    return { opensAt: start - 10 * 60_000, endsAt: start + durationMs + 10 * 60_000 };
-  }
-  const start = c.started_at ? new Date(c.started_at).getTime() : Date.now();
-  return { opensAt: 0, endsAt: start + durationMs + 10 * 60_000 };
-}
+const videoSchema = z.object({ lang: z.enum(['es', 'fr']).default('es') });
 
+/**
+ * Visio maison : renvoie l'adresse de notre page d'appel WebRTC (servie par cette API), avec un jeton
+ * d'appel personnel et les identifiants TURN temporaires, passés dans le fragment (#) pour ne jamais
+ * apparaître dans les journaux du serveur.
+ */
 router.post('/:id/video', async (req, res) => {
-  let c = await consultations.loadForUser(Number(req.params.id), req.user);
+  const c = await consultations.loadForUser(Number(req.params.id), req.user);
   if (c.type !== 'video') throw badRequest('Esta consulta es por chat');
   if (!['paid', 'active'].includes(c.status)) throw badRequest('La videollamada no está disponible');
+  const { lang } = parse(videoSchema, req.body ?? {});
 
   const { opensAt, endsAt } = videoWindow(c);
   const now = Date.now();
   if (now < opensAt) throw badRequest('Podrás entrar 10 minutos antes de la hora reservada');
   if (now > endsAt) throw badRequest('El horario de esta videollamada ya terminó');
-
-  if (!c.daily_room) {
-    const name = await createRoom(c.id, new Date(endsAt));
-    // Si deux participants arrivent en même temps, la première salle enregistrée gagne.
-    await query('UPDATE consultations SET daily_room = ? WHERE id = ? AND daily_room IS NULL', [name, c.id]);
-    c = await consultations.load(c.id);
-  }
   if (c.status === 'paid') await consultations.startVideo(c.id);
 
   const isReader = req.user.id === c.reader_id;
-  const token = await createToken({
-    roomName: c.daily_room,
-    userName: req.user.name,
-    isOwner: isReader,
-    expiresAt: new Date(endsAt),
+  const fragment = new URLSearchParams({
+    c: String(c.id),
+    t: callToken(req.user, c.id, endsAt),
+    lang,
+    peer: (isReader ? c.client_name : c.reader_name).split(' ')[0],
+    ice: Buffer.from(JSON.stringify(iceServers(req.user.id, endsAt))).toString('base64url'),
   });
-  res.json({ url: roomUrl(c.daily_room, token), endsAt: new Date(endsAt - 10 * 60_000).toISOString() });
+  res.json({ url: `${config.publicUrl}/call/#${fragment}`, endsAt: new Date(endsAt - 10 * 60_000).toISOString() });
 });
 
 router.post('/:id/complete', requireAuth('reader', 'admin'), async (req, res) => {

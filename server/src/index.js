@@ -26,6 +26,8 @@ app.post('/payments/stripe/webhook', express.raw({ type: 'application/json' }), 
 
 app.use(express.json({ limit: '100kb' }));
 app.use('/uploads', express.static(fileURLToPath(UPLOAD_DIR), { maxAge: '30d' }));
+// Page de visio maison (WebRTC), ouverte dans la WebView de l'app.
+app.use('/call', express.static(fileURLToPath(new URL('../public/call/', import.meta.url)), { maxAge: '1h' }));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.get('/config', (_req, res) => res.json({ testMode: config.testMode }));

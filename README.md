@@ -176,6 +176,7 @@ flowchart LR
     API[API Node.js<br/>Express 5 + Socket.io]
     DB[(MariaDB)]
     DEMO[lunara-demo<br/>présence de démo]
+    TURN[coturn<br/>relais TURN]
   end
 
   UI -- HTTPS REST --> NG
@@ -187,8 +188,9 @@ flowchart LR
   PS -- carte --> STRIPE[Stripe]
   STRIPE -- webhook --> NG
   API -- PaymentIntent / remboursement --> STRIPE
-  API -- salles + jetons --> DAILY[Daily.co]
-  WV -- visio WebRTC --> DAILY
+  WV -- page /call + signalisation --> NG
+  WV <-. vidéo WebRTC directe .-> WV2[📱 autre téléphone]
+  WV -. si pas de chemin direct .-> TURN
   API -- interprétations --> CLAUDE[Claude API]
 ```
 
@@ -200,7 +202,7 @@ flowchart LR
 | Temps réel | Socket.io | Chat, présence « en ligne », notifications |
 | Base | MySQL 8 / MariaDB | Déjà présent sur le serveur |
 | Paiement | Stripe (PaymentSheet + webhook) | Cartes du monde entier, Apple/Google Pay, devise PEN |
-| Visio | Daily.co dans une WebView | Compatible Expo Go (pas de module WebRTC natif) |
+| Visio | **Maison** : WebRTC dans une WebView + signalisation Socket.io + relais TURN coturn | Aucun service externe, compatible Expo Go |
 | IA | Claude (`claude-opus-5-5`) côté serveur | La clé ne quitte jamais le serveur |
 
 ---
@@ -237,7 +239,7 @@ npm run demo:presence     # (autre terminal) met 4 voyantes de démo en ligne
 ```
 
 Puis dans `mobile/.env` : `EXPO_PUBLIC_API_URL=http://<ip-locale-de-ton-pc>:4000`.
-Sans clés Stripe / Daily / Claude, l'app marche quand même : ces fonctions répondent « non disponible ».
+Sans clés Stripe / Claude (ni relais TURN), l'app marche quand même : ces fonctions répondent « non disponible ».
 
 ### Scripts utiles
 
@@ -271,7 +273,7 @@ Lunara/
 │       │   ├── expert/[id].tsx   Fiche voyante
 │       │   ├── book/[id].tsx     Réservation + paiement
 │       │   ├── consultation/[id].tsx  Chat, visio, tirage, avis, annulation
-│       │   ├── video/[id].tsx    Visio Daily en WebView + compte à rebours
+│       │   ├── video/[id].tsx    Ouvre notre page d'appel (WebView), garde l'écran allumé
 │       │   ├── reading/[id].tsx  La voyante saisit son tirage
 │       │   ├── deepen/[id].tsx   Approfondir un tirage avec l'IA
 │       │   ├── review/[id].tsx   Laisser un avis
@@ -296,9 +298,10 @@ Lunara/
 │       ├── schema.sql · migrate.js
 │       ├── realtime.js           Socket.io : salles, présence, messages
 │       ├── routes/               auth, readers, consultations, payments, ai, me, reader, admin
-│       ├── services/             consultations, slots (créneaux), daily, payments (Stripe), claude
+│       ├── services/             consultations, slots (créneaux), call (visio), payments (Stripe), claude
 │       ├── seed-demo.js          Données de démo (+ --purge)
 │       └── demo-presence.js      Garde des voyantes de démo en ligne
+│   └── public/call/              Page d'appel WebRTC (HTML, CSS, JS) servie sur /call
 │
 ├── deploy.sh                     Redéploiement sur le serveur
 └── README.md
@@ -345,8 +348,32 @@ sequenceDiagram
 ### Forfaits chat
 Chaque message du client consomme une question (décompte **atomique** en SQL : impossible de dépasser, même avec deux envois simultanés). La question écrite à la réservation compte comme la 1ʳᵉ.
 
-### Visio Daily
-Salle **privée, 2 personnes max**, créée à la première entrée, qui **expire et éjecte tout le monde** à la fin du créneau (+10 min). Chaque participant reçoit un jeton personnel (la voyante est « owner »). Hors mode test : accès 10 min avant l'heure réservée.
+### Visio maison (WebRTC + notre serveur)
+
+Aucun service vidéo externe : tout passe par notre serveur.
+
+```mermaid
+sequenceDiagram
+  participant A as 📱 Client (WebView)
+  participant S as API Lunara (Socket.io)
+  participant B as 📱 Voyante (WebView)
+  A->>S: POST /consultations/:id/video
+  S-->>A: URL /call/ + jeton d'appel + identifiants TURN
+  A->>S: call:join (attend l'autre)
+  B->>S: call:join
+  S-->>A: call:peer-joined
+  A->>S: offre WebRTC
+  S->>B: offre relayée
+  B->>S: réponse + candidats ICE
+  S->>A: relayés
+  A-->>B: vidéo et son en direct (ou via le relais TURN)
+```
+
+- **Page d'appel** : `server/public/call/` (HTML, CSS, JS), servie sur `/call` et ouverte dans la WebView de l'app (le WebRTC du navigateur marche dans Expo Go). Micro, caméra, caméra avant / arrière, raccrocher, compte à rebours, espagnol / français.
+- **Signalisation** : Socket.io relaie offres, réponses et candidats ICE entre les **deux seuls participants** de la consultation.
+- **Jeton d'appel** : propre à une visio, expire à la fin du créneau, refusé par l'API REST ; passé dans le fragment `#` de l'URL pour ne jamais apparaître dans les logs du serveur.
+- **Relais TURN (coturn)** sur le serveur : utilisé quand les deux téléphones ne peuvent pas se joindre directement (4G, box strictes). Identifiants temporaires = HMAC du secret partagé `TURN_SECRET`. Ports : **3478 TCP/UDP** et **49160-49200 UDP**, ouverts sur le pare-feu et redirigés par la box vers le serveur.
+- **Durée** : le serveur ferme la salle à la fin du créneau (+10 min). Hors mode test, accès 10 min avant l'heure réservée.
 
 ### Créneaux
 Les horaires des voyantes sont en **heure de Lima (UTC-5, sans heure d'été)**. Les créneaux sont calculés sur 7 jours, par pas de 30 min, au moins 1 h à l'avance, en retirant ceux déjà réservés.
@@ -442,7 +469,7 @@ erDiagram
 | `users` | Comptes (`client`, `reader`, `admin`), mot de passe bcrypt |
 | `reader_profiles` | Bio, spécialités, langues, statut de validation, en ligne, horaires, note moyenne |
 | `reader_offers` | Les 5 forfaits et leurs prix (en céntimos de sol) |
-| `consultations` | Réservations : type, forfait, prix, statut, créneau, questions utilisées, salle Daily, tirage |
+| `consultations` | Réservations : type, forfait, prix, statut, créneau, questions utilisées, tirage |
 | `messages` | Chat (`is_question` pour le compteur) |
 | `reviews` | 1 avis par consultation terminée |
 | `payments` | Trace des paiements Stripe |
@@ -493,12 +520,12 @@ Toutes les dates sont en **UTC**. Schéma complet : [`server/src/schema.sql`](se
 | Base | MariaDB, base et utilisateur `lunara` (localhost uniquement) |
 | Secrets | `/opt/lunara/server/.env` (chmod 600, **jamais dans Git**) |
 | Stripe | Mode **test**, webhook `…/payments/stripe/webhook` (`payment_intent.succeeded`) |
-| Daily | Domaine `lunaria.daily.co` |
+| Visio | Page `/call` + relais TURN **coturn** (`/etc/turnserver.conf`, ports 3478 et 49160-49200) |
 
 Commandes utiles sur le serveur :
 
 ```bash
-systemctl status lunara lunara-demo     # état
+systemctl status lunara lunara-demo coturn   # état
 journalctl -u lunara -f                 # logs en direct
 systemctl restart lunara                # après modification du .env
 ```
@@ -530,6 +557,7 @@ Redéployer après une modification du backend (depuis la racine du repo, avec l
 | `Importing native-only module … stripe` en web | Normal : Stripe n'existe que sur iOS/Android, la version web désactive le paiement |
 | Paiement « no disponible » | Vérifie `EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY` dans `mobile/.env` et relance avec `-c` |
 | Visio noire / pas de son | Autorise caméra et micro (Réglages → Expo Go) ; teste sur deux téléphones |
+| La visio reste sur « Connexion… » en 4G | Le relais TURN n'est pas joignable : vérifie la redirection des ports 3478 (TCP + UDP) et 49160-49200 (UDP) sur la box, et `systemctl status coturn` |
 | « La interpretación no está disponible » | Quota IA du jour atteint, ou plus de crédit sur le compte Anthropic |
 | Déconnecté d'un coup | Les données de démo ont été régénérées : reconnecte-toi |
 
@@ -540,7 +568,7 @@ Redéployer après une modification du backend (depuis la racine du repo, avec l
 - 🔔 **Notifications push** : Expo Go ne les gère plus sur Android → passer à une *development build* (`eas build --profile development`) puis `expo-notifications`. Aujourd'hui : bannières dans l'app.
 - 💸 **Reversement aux voyantes** : gains calculés (commission `PLATFORM_COMMISSION`, 30 %), virement manuel → étape suivante : **Stripe Connect**.
 - 🍎 **Apple Pay** ne fonctionne pas dans Expo Go (il faut une build signée).
-- 🎥 Visio native (LiveKit/Agora) possible plus tard avec une development build.
+- 🎥 Visio : passer en WebRTC natif (react-native-webrtc) avec une development build pour plus de fluidité ; ajouter TURN sur TLS pour les réseaux d'entreprise très fermés.
 - 🌐 D'autres langues : ajouter un dictionnaire comme `fr.ts`.
 
 ---

@@ -7,13 +7,23 @@ export function signToken(user) {
   return jwt.sign({ sub: user.id, role: user.role }, config.jwtSecret, { expiresIn: '30d' });
 }
 
-export async function userFromToken(token) {
+/** Vérifie un jeton et renvoie son contenu, ou null. */
+export function verifyToken(token) {
   try {
-    const payload = jwt.verify(token, config.jwtSecret);
-    return await one('SELECT id, role, name, email, avatar_url FROM users WHERE id = ?', [payload.sub]);
+    return jwt.verify(token, config.jwtSecret);
   } catch {
     return null;
   }
+}
+
+/**
+ * Utilisateur d'un jeton. Les jetons d'appel (visio) sont refusés par défaut :
+ * ils ne servent qu'à la signalisation de leur visio, pas à l'API.
+ */
+export async function userFromToken(token, { allowCallToken = false } = {}) {
+  const payload = token ? verifyToken(token) : null;
+  if (!payload || (payload.call && !allowCallToken)) return null;
+  return one('SELECT id, role, name, email, avatar_url FROM users WHERE id = ?', [payload.sub]);
 }
 
 /** Exige un utilisateur connecté, éventuellement avec l'un des rôles donnés. */

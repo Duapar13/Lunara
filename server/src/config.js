@@ -34,9 +34,10 @@ export const config = {
     webhookSecret: env.STRIPE_WEBHOOK_SECRET || '',
   },
 
-  daily: {
-    apiKey: env.DAILY_API_KEY || '',
-    domain: env.DAILY_DOMAIN || '',
+  // Relais TURN (coturn) de la visio maison : secret partagé avec /etc/turnserver.conf.
+  turn: {
+    secret: env.TURN_SECRET || '',
+    host: env.TURN_HOST || '',
   },
 
   ai: {
