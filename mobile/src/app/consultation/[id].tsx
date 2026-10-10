@@ -1,0 +1,431 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { api, errorMessage } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { useSocket, useSocketEvent } from '@/lib/socket';
+import { formatDateTime, formatPrice, formatTime, offerTitle, STATUS_LABEL, topicLabel, videoOpensAt } from '@/lib/format';
+import { SPREAD_POSITIONS } from '@/lib/tarot';
+import type { Consultation, Message } from '@/lib/types';
+import { Avatar } from '@/components/Avatar';
+import { TarotCard } from '@/components/TarotCard';
+import { Button, Card, ErrorText, Loading, Stars } from '@/components/ui';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, fonts, gradients, radius, space, type } from '@/theme';
+import { CosmicScreen } from '@/components/Cosmic';
+
+type Detail = { consultation: Consultation; messages: Message[]; review: { rating: number; comment: string | null } | null };
+
+export default function ConsultationScreen() {
+  const id = Number(useLocalSearchParams<{ id: string }>().id);
+  const { user } = useAuth();
+  const { socket, setActiveConsultation } = useSocket();
+  const [c, setC] = useState<Consultation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [review, setReview] = useState<Detail['review']>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSent = useRef(0);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await api<Detail>(`/consultations/${id}`);
+      setC(res.consultation);
+      setMessages(res.messages);
+      setReview(res.review);
+      setError(null);
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+      setActiveConsultation(id);
+      return () => {
+        setActiveConsultation(null);
+      };
+    }, [id, load, setActiveConsultation]),
+  );
+
+  // Rejoint la salle Socket.io de la consultation (et la rejoint à nouveau après une reconnexion).
+  useEffect(() => {
+    if (!socket) return;
+    const join = () => socket.emit('consultation:join', id);
+    join();
+    socket.on('connect', join);
+    return () => {
+      socket.off('connect', join);
+      socket.emit('consultation:leave', id);
+    };
+  }, [socket, id]);
+
+  // Rafraîchit l'état « vidéo disponible » chaque minute.
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const addMessage = useCallback((m: Message) => {
+    setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+  }, []);
+
+  useSocketEvent<Message>('message:new', (m) => {
+    if (m.consultationId !== id) return;
+    addMessage(m);
+    setTyping(false);
+  });
+  useSocketEvent<Consultation>('consultation:updated', (updated) => {
+    if (updated.id === id) setC(updated);
+  });
+  useSocketEvent<{ consultationId: number }>('typing', ({ consultationId }) => {
+    if (consultationId !== id) return;
+    setTyping(true);
+    if (typingTimer.current) clearTimeout(typingTimer.current);
+    typingTimer.current = setTimeout(() => setTyping(false), 3000);
+  });
+
+  if (!c) return error ? <ErrorText message={error} /> : <Loading />;
+  if (!user) return null;
+
+  const isReader = user.id === c.reader.id;
+  const other = isReader ? c.client : c.reader;
+  const open = c.status === 'paid' || c.status === 'active';
+  const questionsLeft = c.units - c.questionsUsed;
+  const canWrite = c.type === 'chat' && open && (isReader || questionsLeft > 0);
+
+  async function send() {
+    const body = draft.trim();
+    if (!body || sending) return;
+    setSending(true);
+    try {
+      let message: Message;
+      if (socket?.connected) {
+        const res: { message?: Message; error?: string } = await socket.timeout(10_000).emitWithAck('message:send', {
+          consultationId: id,
+          body,
+        });
+        if (res.error || !res.message) throw new Error(res.error ?? 'No se pudo enviar');
+        message = res.message;
+      } else {
+        message = (await api<{ message: Message }>(`/consultations/${id}/messages`, { method: 'POST', body: { body } })).message;
+        // Sans socket, pas de « consultation:updated » : on relit le compteur de questions.
+        load();
+      }
+      addMessage(message);
+      setDraft('');
+    } catch (err) {
+      Alert.alert('Mensaje no enviado', errorMessage(err));
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function onDraftChange(text: string) {
+    setDraft(text);
+    if (socket && Date.now() - lastTypingSent.current > 2000) {
+      lastTypingSent.current = Date.now();
+      socket.emit('typing', { consultationId: id });
+    }
+  }
+
+  async function action(path: string, confirm: { title: string; text: string; cta: string }) {
+    Alert.alert(confirm.title, confirm.text, [
+      { text: 'Volver', style: 'cancel' },
+      {
+        text: confirm.cta,
+        style: 'destructive',
+        onPress: async () => {
+          setBusy(true);
+          try {
+            const res = await api<{ consultation: Consultation }>(`/consultations/${id}/${path}`, { method: 'POST' });
+            setC(res.consultation);
+          } catch (err) {
+            Alert.alert('Error', errorMessage(err));
+          } finally {
+            setBusy(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  const opensAt = videoOpensAt(c);
+  const videoOpen = c.type === 'video' && open && now >= opensAt;
+
+  const header = (
+    <View style={{ gap: space.lg, paddingBottom: space.lg }}>
+      <Card style={{ gap: space.md }}>
+        <View style={styles.headRow}>
+          <Avatar name={other.name} url={other.avatarUrl} size={48} />
+          <View style={{ flex: 1 }}>
+            <Text style={type.h3}>{other.name}</Text>
+            <Text style={type.small}>
+              {offerTitle(c)} · {topicLabel(c.topic)}
+            </Text>
+          </View>
+          <Text style={styles.status}>{STATUS_LABEL[c.status]}</Text>
+        </View>
+
+        {c.type === 'video' && c.scheduledAt && (
+          <View style={styles.infoRow}>
+            <Ionicons name="calendar-outline" size={16} color={colors.accent} />
+            <Text style={type.body}>{formatDateTime(c.scheduledAt)}</Text>
+          </View>
+        )}
+        {c.type === 'chat' && open && (
+          <View style={styles.infoRow}>
+            <Ionicons name="help-circle-outline" size={16} color={colors.accent} />
+            <Text style={type.body}>
+              Preguntas usadas: {c.questionsUsed}/{c.units}
+            </Text>
+          </View>
+        )}
+        <StatusHint c={c} isReader={isReader} />
+
+        {c.type === 'video' && open && (
+          <Button
+            title={videoOpen ? 'Entrar a la videollamada' : `Disponible desde las ${formatTime(new Date(opensAt).toISOString())}`}
+            icon="videocam"
+            disabled={!videoOpen}
+            onPress={() => router.push(`/video/${c.id}`)}
+          />
+        )}
+
+        {isReader && (open || (c.status === 'completed' && !c.readingCards)) && (
+          <Button
+            title={c.readingCards ? 'Editar tirada' : 'Registrar tirada'}
+            variant="secondary"
+            icon="albums-outline"
+            onPress={() => router.push(`/reading/${c.id}`)}
+          />
+        )}
+        {isReader && open && (
+          <Button
+            title="Finalizar consulta"
+            variant="secondary"
+            loading={busy}
+            onPress={() =>
+              action('complete', {
+                title: 'Finalizar consulta',
+                text: 'El cliente ya no podrá escribir y podrá dejar su reseña.',
+                cta: 'Finalizar',
+              })
+            }
+          />
+        )}
+        {!isReader && c.status === 'completed' && !c.reviewRating && !review && (
+          <Button title="Dejar mi reseña" icon="star-outline" onPress={() => router.push(`/review/${c.id}`)} />
+        )}
+        {!isReader && c.readingCards && (
+          <Button
+            title="Profundizar con IA"
+            variant="secondary"
+            icon="sparkles-outline"
+            onPress={() => router.push(`/deepen/${c.id}`)}
+          />
+        )}
+        {c.status === 'paid' && !c.startedAt && (
+          <Button
+            title="Cancelar y reembolsar"
+            variant="ghost"
+            small
+            loading={busy}
+            onPress={() =>
+              action('cancel', {
+                title: 'Cancelar consulta',
+                text: `Se reembolsará ${formatPrice(c.priceCents)} al medio de pago original.`,
+                cta: 'Cancelar consulta',
+              })
+            }
+          />
+        )}
+        {c.status === 'pending_payment' && (
+          <Button
+            title="Cancelar reserva"
+            variant="ghost"
+            small
+            onPress={() => action('cancel', { title: 'Cancelar reserva', text: 'Esta reserva no fue pagada.', cta: 'Cancelar' })}
+          />
+        )}
+      </Card>
+
+      {c.readingCards && (
+        <Card style={{ gap: space.md }}>
+          <Text style={styles.label}>LA TIRADA DE {c.reader.name.split(' ')[0].toUpperCase()}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+            {c.readingCards.map((card, i) => (
+              <TarotCard key={`${card.id}-${i}`} card={card} faceUp width={70} label={SPREAD_POSITIONS[i] ?? `Carta ${i + 1}`} />
+            ))}
+          </ScrollView>
+          {!!c.readerNotes && <Text style={type.bodyMuted}>{c.readerNotes}</Text>}
+        </Card>
+      )}
+
+      {review && (
+        <Card style={{ gap: 6 }}>
+          <Text style={styles.label}>RESEÑA</Text>
+          <Stars value={review.rating} />
+          {!!review.comment && <Text style={type.bodyMuted}>{review.comment}</Text>}
+        </Card>
+      )}
+    </View>
+  );
+
+  return (
+    <CosmicScreen>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
+      <Stack.Screen options={{ title: other.name }} />
+      {c.type === 'chat' ? (
+        <FlatList
+          inverted
+          data={[...messages].reverse()}
+          keyExtractor={(m) => String(m.id)}
+          contentContainerStyle={styles.list}
+          ListFooterComponent={header}
+          ListHeaderComponent={typing ? <Text style={styles.typing}>{other.name.split(' ')[0]} está escribiendo…</Text> : null}
+          renderItem={({ item }) => {
+            const mine = item.senderId === user.id;
+            const questionNumber = item.isQuestion
+              ? messages.filter((m) => m.isQuestion && m.id <= item.id).length
+              : null;
+            return (
+              <View style={[styles.bubbleWrap, mine ? { alignItems: 'flex-end' } : { alignItems: 'flex-start' }]}>
+                {questionNumber && (
+                  <Text style={styles.qLabel}>
+                    Pregunta {questionNumber}/{c.units}
+                  </Text>
+                )}
+                {mine ? (
+                  <LinearGradient colors={gradients.violet} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.bubble, styles.mine]}>
+                    <Text style={[styles.bubbleText, { color: colors.white }]}>{item.body}</Text>
+                  </LinearGradient>
+                ) : (
+                  <View style={[styles.bubble, styles.theirs]}>
+                    <Text style={styles.bubbleText}>{item.body}</Text>
+                  </View>
+                )}
+                <Text style={styles.time}>{formatTime(item.createdAt)}</Text>
+              </View>
+            );
+          }}
+        />
+      ) : (
+        <ScrollView contentContainerStyle={styles.list}>{header}</ScrollView>
+      )}
+
+      {c.type === 'chat' && open && (
+        <SafeAreaView edges={['bottom']} style={styles.composer}>
+          {canWrite ? (
+            <>
+              <TextInput
+                value={draft}
+                onChangeText={onDraftChange}
+                placeholder={isReader ? 'Escribe tu respuesta…' : `Escribe tu pregunta (${questionsLeft} restantes)`}
+                placeholderTextColor={colors.textFaint}
+                selectionColor={colors.accent}
+                style={styles.input}
+                multiline
+                maxLength={2000}
+              />
+              <Pressable onPress={send} disabled={!draft.trim() || sending} style={[styles.send, (!draft.trim() || sending) && { opacity: 0.4 }]}>
+                <Ionicons name="arrow-up" size={20} color={colors.white} />
+              </Pressable>
+            </>
+          ) : (
+            <Text style={[type.small, { flex: 1, textAlign: 'center', paddingVertical: 8 }]}>
+              Usaste tus {c.units} preguntas. {c.reader.name.split(' ')[0]} responderá y cerrará la consulta.
+            </Text>
+          )}
+        </SafeAreaView>
+      )}
+    </KeyboardAvoidingView>
+    </CosmicScreen>
+  );
+}
+
+function StatusHint({ c, isReader }: { c: Consultation; isReader: boolean }) {
+  const name = c.reader.name.split(' ')[0];
+  let text: string | null = null;
+  if (c.status === 'pending_payment') text = 'Esta reserva aún no fue pagada.';
+  else if (c.status === 'paid' && c.type === 'chat')
+    text = isReader ? 'Nueva consulta pagada. Responde para iniciarla.' : `Consulta confirmada. ${name} te responderá pronto.`;
+  else if (c.status === 'paid' && c.type === 'video')
+    text = c.scheduledAt
+      ? 'Podrás entrar 10 minutos antes de la hora reservada.'
+      : isReader
+        ? 'El cliente quiere empezar ahora. Entra a la videollamada.'
+        : `${name} está en línea. Entra cuando quieras.`;
+  else if (c.status === 'completed') text = `Consulta finalizada${c.endedAt ? ` el ${formatDateTime(c.endedAt)}` : ''}.`;
+  else if (c.status === 'refunded') text = 'Consulta cancelada y reembolsada.';
+  else if (c.status === 'cancelled') text = 'Consulta cancelada.';
+  if (!text) return null;
+  return <Text style={type.small}>{text}</Text>;
+}
+
+const styles = StyleSheet.create({
+  list: { padding: space.xl, gap: space.sm },
+  headRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  status: { fontFamily: fonts.medium, fontSize: 12, color: colors.accent },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  label: { ...type.label, color: colors.gold },
+  bubbleWrap: { gap: 3, marginBottom: space.sm },
+  qLabel: { fontFamily: fonts.medium, fontSize: 11, color: colors.gold, marginHorizontal: 4 },
+  bubble: { maxWidth: '82%', paddingHorizontal: 14, paddingVertical: 10, borderRadius: radius.lg },
+  mine: { borderBottomRightRadius: 6 },
+  theirs: { backgroundColor: 'rgba(32, 24, 62, 0.85)', borderBottomLeftRadius: 6, borderWidth: 1, borderColor: 'rgba(167, 139, 250, 0.22)' },
+  bubbleText: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.cream },
+  time: { fontFamily: fonts.regular, fontSize: 11, color: colors.textFaint, marginHorizontal: 4 },
+  typing: { ...type.small, fontStyle: 'italic', marginBottom: space.sm },
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 10,
+    paddingHorizontal: space.lg,
+    paddingTop: space.sm,
+    paddingBottom: space.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  input: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 140,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    borderRadius: 22,
+    backgroundColor: colors.surface,
+    color: colors.cream,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+  },
+  send: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

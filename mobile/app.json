@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Lunara",
+    "slug": "lunara",
+    "scheme": "lunara",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#080812",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.lunara.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Lunara usa la cámara para tus videoconsultas.",
+        "NSMicrophoneUsageDescription": "Lunara usa el micrófono para tus videoconsultas.",
+        "NSPhotoLibraryUsageDescription": "Lunara accede a tus fotos para tu foto de perfil."
+      }
+    },
+    "android": {
+      "package": "app.lunara.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#080812",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png"
+      },
+      "permissions": ["CAMERA", "RECORD_AUDIO", "MODIFY_AUDIO_SETTINGS"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-image",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#080812"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Lunara usa la cámara para tus videoconsultas.",
+          "microphonePermission": "Lunara usa el micrófono para tus videoconsultas."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Lunara accede a tus fotos para tu foto de perfil."
+        }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.app.lunara",
+          "enableGooglePay": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
